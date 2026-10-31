@@ -21,6 +21,8 @@ You need a Claude account. That's it.
 - **Pumping.** Run a timer or log it after, in ml or oz, total or left and right.
 - **Type it like a text.** "fed 120ml 8:15", "bf L 15 min", "pump 90ml 8:15", "down 1:30". Claude sorts out anything messier.
 - **The plan.** All four phases of the book, open any time, with its readiness checks shown as advice. Book rules and Cradle's own tips are labeled apart.
+- **Nudges.** The Feed button shows which side to start on and turns amber when a feed is due. The Sleep button counts down to the nap window. In Phase 2, Today shows the book's four feed times.
+- **Lock-screen reminders.** Add feed and bedtime reminders to your phone's calendar in one tap.
 - **Health flags.** Few wet diapers, no poop in a few days, or a big drop in feeds, with a nudge to call your pediatrician.
 - **Both parents.** Share the page with your partner as an editor. Same log, both phones, and every entry shows who logged it.
 - **Night mode.** A dim amber screen at bedtime, plus light and dark.
@@ -35,7 +37,7 @@ When a new version is out, the app shows a banner with a line to paste into Clau
 
 ## Good to know
 
-- It's a web page on your Home Screen, not an App Store app, so there are no push notifications.
+- It's a web page on your Home Screen, not an App Store app, so it can't send notifications itself. Calendar reminders cover feeds and bedtime.
 - Cradle is not medical advice. The book's plan is one approach; check changes with your pediatrician.
 - Health thresholds other than wet diapers are general guidance, not from a pediatric source.
 

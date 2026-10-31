@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.0.0">
+<meta name="cradle-version" content="1.1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -354,6 +354,16 @@ html.night .setup .tick.on{color:var(--bg)}
 .lrsteps .pstep .lbl{font-weight:600;min-width:48px}
 .lrsteps .stepper .iconbtn{width:56px;height:56px}
 .lrsteps .bignum{font-size:36px;min-width:104px;justify-content:center;text-align:center}
+.tile .nextside{font-size:12px;font-weight:700;color:var(--ink);background:var(--card);border-radius:10px;padding:2px 8px;margin-top:2px}
+.tile.due{box-shadow:inset 0 0 0 3px var(--plan)}
+.tile.due .num{color:var(--plan-ink);font-weight:700}
+.dock.mini .tile .nextside{display:none}
+.dock.mini .tile.due{box-shadow:inset 0 0 0 2px var(--plan)}
+.sched{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px}
+.sched .slot{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 12px;border-radius:18px;background:var(--bg);border:1.5px solid var(--line);font-weight:600;font-size:14px}
+.sched .slot.done{background:var(--diaper-soft);border-color:transparent;color:var(--diaper-ink)}
+.sched .slot.next{border-color:var(--plan);color:var(--plan-ink)}
+.sched .slot.due{background:var(--plan);border-color:var(--plan);color:var(--bg)}
 </style>
 
 <div id="app">
@@ -415,6 +425,7 @@ const IC = {
   people: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5"/>',
   lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
   pump: '<path d="M4 4h16l-6 7v6l-4 3v-9z"/>',
   spit: '<path d="M12 3c4 3 6 6 6 9a6 6 0 0 1-12 0c0-3 2-6 6-9z"/><path d="M9 13h6"/>',
   note: '<path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h5"/>',
@@ -704,6 +715,30 @@ function avgGap(list) {
   if (list.length < 2) return null;
   let s = 0; for (let i = 1; i < list.length; i++) s += list[i].start_at - list[i - 1].start_at;
   return s / (list.length - 1);
+}
+/* Which breast to start on next: the opposite of the side the last breast feed ended on. */
+function nextSide() {
+  if (prof().feeding === "bottle") return null;
+  const lb = feeds().filter(e => e.feed && e.feed.kind === "breast").pop(); if (!lb) return null;
+  const last = lb.feed.last_side || (lb.feed.side === "R" ? "R" : "L");
+  return last === "L" ? "R" : "L";
+}
+/* Rough awake-time windows by age (general guidance, not from the book). Minutes [from, to]. */
+function wakeWindow(now = Date.now()) {
+  const d = ageDays(now); if (d == null) return [60, 75];
+  return d < 28 ? [45, 60] : d < 56 ? [60, 75] : d < 84 ? [75, 90] : d < 120 ? [90, 120] : [120, 150];
+}
+function napWindow(now = Date.now()) {
+  if (runningSleep()) return null;
+  const lw = sleeps().filter(e => e.end_at).pop(); if (!lw) return null;
+  const ds = dayStartOf(now); if (now >= bedOf(ds) || lw.end_at < ds - HR) return null;
+  const [lo, hi] = wakeWindow(now), awake = now - lw.end_at;
+  return { from: lw.end_at + lo * MIN, to: lw.end_at + hi * MIN, lo, hi, awake, state: awake >= hi * MIN ? "past" : awake >= lo * MIN ? "now" : "soon" };
+}
+function feedDue(now = Date.now()) {
+  const nf = nextFeed(now); if (!nf || nf.night || !nf.at || runningBreast()) return null;
+  const left = nf.at - now;
+  return { at: nf.at, left, state: left <= 0 ? "due" : left <= 30 * MIN ? "soon" : "later" };
 }
 function targetFeeds(ds) { return [0, 4, 8, 12].map(h => ds + h * HR); }
 function _nextFeed(now = Date.now()) {
@@ -1596,12 +1631,15 @@ function renderDock(show) {
   const now = Date.now(), rs = runningSleep(), rb = runningBreast(), lf = lastFeed();
   const lastDiaper = evs().filter(e => e.type === "diaper").pop();
   const lastWake = sleeps().filter(e => e.end_at).pop();
+  const due = feedDue(now), ns = rb ? null : nextSide(), nap = napWindow(now);
+  const feedNum = rb ? `<span data-since="${rb.start_at}">${fmtClock(now - rb.start_at)}</span>` : due && due.state === "due" ? "Due now" : due && due.state === "soon" ? `Due in ${fmtDur(due.left)}` : lf ? fmtTime(lf.start_at) : "One tap";
+  const sleepNum = rs ? null : nap ? (nap.state === "past" ? "Nap overdue" : nap.state === "now" ? "Nap time" : `Nap in ${fmtDur(nap.from - now)}`) : null;
   $("#tiles").innerHTML = `
-    <div class="tilewrap w-feed"><button type="button" class="tile feed ${rb ? "running" : ""}" id="tFeed" aria-label="${rb ? "Breastfeeding in progress. Open timer" : "Log a feed with one tap"}">
-      <span class="ring">${icon("bottle")}</span><b>Feed</b><span class="num">${rb ? `<span data-since="${rb.start_at}">${fmtClock(now - rb.start_at)}</span>` : lf ? fmtTime(lf.start_at) : "One tap"}</span></button>
+    <div class="tilewrap w-feed"><button type="button" class="tile feed ${rb ? "running" : ""} ${due && due.state !== "later" ? "due" : ""}" id="tFeed" aria-label="${rb ? "Breastfeeding in progress. Open timer" : `Log a feed with one tap${due && due.state === "due" ? ". A feed is due" : ""}${ns ? `. Next side ${ns === "L" ? "left" : "right"}` : ""}`}">
+      <span class="ring">${icon("bottle")}</span><b>Feed</b><span class="num">${feedNum}</span>${ns ? `<span class="nextside">Next: ${ns === "L" ? "Left" : "Right"}</span>` : ""}</button>
       <button type="button" class="more" id="tFeedMore" aria-label="Feed options">${icon("more", "s")}</button></div>
-    <div class="tilewrap w-sleep"><button type="button" class="tile sleep ${rs ? "running" : ""}" id="tSleep" aria-label="${rs ? "Asleep. Tap at wake-up" : "Start a sleep"}">
-      <span class="ring">${icon(rs ? "sun" : "moon")}</span><b>${rs ? pr("He's up") : "Sleep"}</b><span class="num">${rs ? `Asleep <span data-since="${rs.start_at}" data-fmt="dur">${fmtDur(now - rs.start_at)}</span>` : lastWake ? `Awake <span data-since="${lastWake.end_at}" data-fmt="dur">${fmtDur(now - lastWake.end_at)}</span>` : "Start timer"}</span></button>
+    <div class="tilewrap w-sleep"><button type="button" class="tile sleep ${rs ? "running" : ""} ${nap && nap.state !== "soon" ? "due" : ""}" id="tSleep" aria-label="${rs ? "Asleep. Tap at wake-up" : "Start a sleep"}">
+      <span class="ring">${icon(rs ? "sun" : "moon")}</span><b>${rs ? pr("He's up") : "Sleep"}</b><span class="num">${rs ? `Asleep <span data-since="${rs.start_at}" data-fmt="dur">${fmtDur(now - rs.start_at)}</span>` : lastWake ? `Awake <span data-since="${lastWake.end_at}" data-fmt="dur">${fmtDur(now - lastWake.end_at)}</span>` : "Start timer"}</span>${sleepNum ? `<span class="nextside">${sleepNum}</span>` : ""}</button>
       <button type="button" class="more" id="tSleepMore" aria-label="Sleep options">${icon("more", "s")}</button></div>
     <div class="tilewrap w-diaper"><button type="button" class="tile diaper" id="tDiaper" aria-label="Log a diaper">
       <span class="ring">${icon("diaper")}</span><b>Diaper</b><span class="num">${lastDiaper ? fmtTime(lastDiaper.start_at) : "Pee or poop"}</span></button></div>`;
@@ -1615,7 +1653,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. Check your connection. Anything you log is kept on this phone and synced later.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
@@ -1653,6 +1691,8 @@ function viewToday() {
         <p class="small">Next feed around <b>${fmtTime(nf.at)}</b> · ${esc(nf.text)}${nf.src === "book" ? ' <span class="tag book">Book</span>' : ""}</p>`;
     }
   }
+  const nap = napWindow(now);
+  if (nap && !night) next += `<p class="small">Nap window ${esc(fmtTime(nap.from))} to ${esc(fmtTime(nap.to))} <span class="tag tip">Cradle tip</span> <span class="sub">About ${nap.lo} to ${nap.hi} min awake at this age</span></p>`;
   const phase = PHASES[ph - 1];
   const tip = night ? (ph <= 2 ? ["book", pr("Don't hold back night feeds yet. If he's hungry, feed him.")] : ["book", "Fade one night feed at a time. A hungry, crying baby still gets fed."]) : [phase.book[0] ? "book" : "tip", `${phase.book[1] ? phase.book[1][0] : phase.book[0][0]}. ${phase.book[1] ? phase.book[1][1] : phase.book[0][1]}`];
   const tonight = night ? nightLog(bed, now) : "";
@@ -1668,6 +1708,7 @@ function viewToday() {
       <button type="button" class="stat sleep" data-go="log"><b class="num">${fmtDur(overlapSleep(ds, Math.min(bed, now), now))}</b><span>day sleep · ${t.naps} naps</span></button>
     </div>
     ${tonight}
+    ${scheduleCard(ds, now, ph)}
     <div class="card advice"><div class="row"><span class="tag ${tip[0]}">${tip[0] === "book" ? "From the book" : "Cradle tip"}</span><span class="tag claude" style="background:none;padding:0">Phase ${ph} · ${esc(phase.name)}</span></div><p>${esc(tip[1])}</p></div>
     ${!flags.filter(f => !f.soft).length && evs().length > 8 ? `<div class="okline">${icon("check", "s")}<span>Nothing to flag. Diapers and feeds look on track.</span></div>` : ""}
     ${todayTimeline(ds, now)}
@@ -1685,6 +1726,41 @@ function nightLog(bed, now) {
 function tlRow(e) {
   const detail = e.type === "sleep" ? (e.end_at ? `${fmtTime(e.start_at)} to ${fmtTime(e.end_at)}` : "Still asleep") : e.note || "";
   return `<button type="button" class="tl" data-edit="${e.id}"><span class="t num">${fmtTime(e.start_at)}</span><span class="dot d-${e.type}"></span><span class="grow"><b style="font-weight:500">${esc(evLabel(e))}</b>${detail ? `<br><span class="sub small">${esc(detail)}</span>` : ""}</span>${whoDot(e.logged_by)}</button>`;
+}
+/* Phase 2+: the book's four daytime feeds, four hours apart from the start of the day. */
+function scheduleCard(ds, now, ph) {
+  if (ph < 2 || now >= bedOf(ds)) return "";
+  const day = feeds().filter(e => e.start_at >= ds - 30 * MIN && e.start_at < bedOf(ds));
+  const ts = targetFeeds(ds), nextT = ts.find(t => t > now - 20 * MIN && !day.some(e => Math.abs(e.start_at - t) <= 45 * MIN));
+  return `<div class="card"><div class="row"><h2 class="h3 grow">Today's feeds</h2><span class="tag book">From the book</span></div>
+    <div class="sched">${ts.map(t => { const done = day.some(e => Math.abs(e.start_at - t) <= 45 * MIN); const cls = done ? "done" : t === nextT ? (now >= t ? "due" : "next") : ""; return `<span class="slot ${cls}">${done ? icon("check", "s") : ""}${esc(fmtTime(t))}</span>`; }).join("")}</div>
+    <p class="sub small">Four full feeds, four hours apart. A hungry baby still gets fed early.</p>${remindersBtn()}</div>`;
+}
+const remindersBtn = () => `<button type="button" class="btn ghost block" data-act="reminders">${icon("bell", "s")}Add reminders to my calendar</button>`;
+function icsText() {
+  const p = prof(), ph = planDoc().phase, ds = nextDayStart(dayStartOf(Date.now())); // tomorrow, DST-safe
+  const two = n => String(n).padStart(2, "0"), stamp = d => { const x = new Date(d); return `${x.getFullYear()}${two(x.getMonth() + 1)}${two(x.getDate())}T${two(x.getHours())}${two(x.getMinutes())}00`; };
+  const now = new Date(), utc = `${now.getUTCFullYear()}${two(now.getUTCMonth() + 1)}${two(now.getUTCDate())}T${two(now.getUTCHours())}${two(now.getUTCMinutes())}00Z`;
+  const name = p.name || "Baby", ev = [];
+  const add = (t, title, desc, mins) => ev.push(["BEGIN:VEVENT", `UID:cradle-${t}-${title.replace(/\W+/g, "")}@cradle`, `DTSTAMP:${utc}`, `DTSTART:${stamp(t)}`, `DURATION:PT${mins}M`, "RRULE:FREQ=DAILY", `SUMMARY:${title}`, `DESCRIPTION:${desc}`, "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${title}`, "TRIGGER:-PT0M", "END:VALARM", "END:VEVENT"].join("\r\n"));
+  if (ph >= 2) targetFeeds(ds).forEach((t, i) => add(t, `Feed ${name} (${i + 1} of 4)`, "Cradle: the book's four daytime feeds, four hours apart. Open Cradle to log it.", 30));
+  else add(ds, `Start the day: feed ${name}`, "Cradle: a steady start time anchors the day.", 15);
+  add(bedOf(ds) - 30 * MIN, `Start ${name}'s bedtime routine`, "Cradle: bath, feed, down by bedtime.", 30);
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Cradle//EN", "CALSCALE:GREGORIAN", `X-WR-CALNAME:Cradle · ${name}`, ...ev, "END:VCALENDAR"].join("\r\n");
+}
+async function downloadReminders() {
+  const data = icsText(), filename = `cradle-reminders-${(prof().name || "baby").toLowerCase().replace(/\W+/g, "-")}.ics`;
+  if (B.downloads) { try { await B.downloads.save({ filename, data }); toast("Open the file to add the reminders to your calendar"); markSetup("reminders"); return; } catch (e) { if (e && e.code === "declined") return; } }
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/calendar" })); a.download = filename; a.click(); toast("Open the file to add the reminders to your calendar"); markSetup("reminders"); } catch { toast("Couldn't make the calendar file here", [], { error: true }); }
+}
+function openReminders() {
+  const ph = planDoc().phase, ds = dayStartOf(Date.now());
+  openSheet("Reminders on your lock screen", `
+    <p>Cradle is a web page, so it can't buzz your phone on its own. Your calendar can. This adds daily repeating reminders:</p>
+    <div class="list">${ph >= 2 ? targetFeeds(ds).map((t, i) => `<div class="li">${icon("bottle", "s")}<span class="grow">Feed ${i + 1} of 4</span><span class="val">${esc(fmtTime(t))}</span></div>`).join("") : `<div class="li">${icon("sun", "s")}<span class="grow">Start the day with a feed</span><span class="val">${esc(fmtTime(ds))}</span></div>`}
+      <div class="li">${icon("moon", "s")}<span class="grow">Start bedtime routine</span><span class="val">${esc(fmtTime(bedOf(ds) - 30 * MIN))}</span></div></div>
+    <p class="sub small">${ph >= 2 ? "Times follow the book's Phase 2 schedule from your day start." : "Phase 1 follows hunger, not the clock, so feed reminders arrive in Phase 2. Come back here when you move up."} If you change your day start or bedtime, add the file again and delete the old reminders.</p>
+    <button type="button" class="btn big block" id="icsGo">${icon("download")}Add to my calendar</button>`, root => { $("#icsGo", root).onclick = () => { closeSheet(); downloadReminders(); }; });
 }
 function todayTimeline(ds, now) {
   const list = evs().filter(e => e.start_at >= ds).slice(-6).reverse();
@@ -1827,6 +1903,7 @@ function viewMe() {
       ${row("checks", "list", "History of checks", `${D().checks.size}`)}
     </div>
     <div class="list">
+      ${row("reminders", "bell", "Calendar reminders", planDoc().phase >= 2 ? "Feeds + bedtime" : "Bedtime")}
       ${row("setup-guide", "info", "Setup guide", "Home Screen, partner, Claude")}
       ${row("people", "people", "Who's logging", people.length ? people.join(", ") : "Just you so far")}
       ${row("export", "download", "Export log", "CSV")}
@@ -1855,7 +1932,7 @@ function wireView(v) {
 }
 function act(a, el) {
   ({
-    pump: openPump, "setup-home": () => openSetup("home"), "setup-partner": () => openSetup("partner"), "setup-claude": () => openSetup("claude"), "setup-guide": openSetupGuide,
+    pump: openPump, reminders: openReminders, "setup-home": () => openSetup("home"), "setup-partner": () => openSetup("partner"), "setup-claude": () => openSetup("claude"), "setup-reminders": () => openSetup("reminders"), "setup-guide": openSetupGuide,
     "setup-hide": () => { markSetup("hidden"); toast("Hidden. Find it again in Me, under Setup guide."); },
     "upd-copy": () => copyText(UPDATE_PROMPT, "Copied. Paste it into Claude Code."), "upd-later": () => { ls.set("cradle.update", latest ? latest.version : ""); render(); },
     "demo-off": () => setDemo(false), demo: () => setDemo(!S.demo),
@@ -2040,6 +2117,7 @@ function setupSteps() {
   const steps = [
     { k: "home", t: "Put Cradle on your Home Screen", s: "Opens full screen, like an app.", done: d.home || standalone() },
     isOwner() ? { k: "partner", t: "Invite your partner", s: "Same log, both phones. Every entry shows who logged it.", done: d.partner } : null,
+    { k: "reminders", t: "Get reminders on your lock screen", s: "Bedtime now. Feed times from Phase 2.", done: d.reminders },
     { k: "claude", t: "Let Claude read messy notes", s: "Type \"ate 4oz around 3\" and Claude sorts it out.", done: d.claude },
   ].filter(Boolean);
   return steps;
@@ -2059,6 +2137,7 @@ function openSetup(k) {
   const doneBtn = (label = "Done") => `<button type="button" class="btn big block" id="stDone">${label}</button>`;
   const wire = root => { const b = $("#stDone", root); if (b) b.onclick = () => { markSetup(k); closeSheet(); toast("Nice. One less thing."); }; };
   const os = phoneOS();
+  if (k === "reminders") return openReminders();
   if (k === "home") return openSheet("Add Cradle to your Home Screen", `
     ${os !== "android" ? `<h3 class="h3">iPhone (Safari)</h3><ol class="steps"><li>Open this page in <b>Safari</b>. In the Claude app, tap the page's menu and choose <b>Open in browser</b> first.</li><li>Tap the <b>Share</b> button at the bottom of the screen.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>` : ""}
     ${os !== "ios" ? `<h3 class="h3">Android (Chrome)</h3><ol class="steps"><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu at the top right.</li><li>Tap <b>Add to Home screen</b>, then <b>Add</b>.</li></ol>` : ""}

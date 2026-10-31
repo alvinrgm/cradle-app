@@ -1,10 +1,14 @@
 {
-  "version": "1.0.0",
-  "notes": "First release: one-tap feed, sleep, diaper and pump logging for either hand, typed notes Claude can read, the four phases of 12 Hours' Sleep by 12 Weeks Old, health flags, and a shared log for both parents.",
+  "version": "1.1.0",
+  "notes": "Nudges: the Feed button shows which breast to start on and turns amber when a feed is due, the Sleep button counts down to the nap window, Phase 2 shows the book's four feed times, and you can add feed and bedtime reminders to your calendar for real lock-screen alerts.",
   "capabilities": {
     "db": {
       "rules": [
-        { "path": "", "read": "admin", "write": "admin" }
+        {
+          "path": "",
+          "read": "admin",
+          "write": "admin"
+        }
       ]
     },
     "user": {},

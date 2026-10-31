@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+- The Feed button shows which breast to start on next ("Next: Right").
+- The Feed button turns amber with "Due in 10m" or "Due now" when a feed is due, from the baby's own gaps (or the book's times in Phase 2).
+- The Sleep button counts down to the nap window and flags when it's passed. Wake windows by age are general guidance and labeled as a Cradle tip.
+- Phase 2 and later: Today shows the book's four feed times, ticks off the ones logged, and highlights the next.
+- Calendar reminders: add daily feed and bedtime reminders to your phone's calendar for real lock-screen alerts. Also in the setup guide and Me.
+- Saves that are refused (view-only access, full storage) are taken back off the screen instead of showing as logged.
+
 ## 1.0.0
 - One-tap Feed, Sleep and Diaper buttons sized for one thumb. The free-hand setting moves the controls to that side, and a hand button on Today flips sides in one tap.
 - The bottom buttons collapse to a slim row to show more of the day.
