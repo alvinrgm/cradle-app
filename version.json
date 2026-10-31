@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "notes": "Nudges: the Feed button shows which breast to start on and turns amber when a feed is due, the Sleep button counts down to the nap window, Phase 2 shows the book's four feed times, and you can add feed and bedtime reminders to your calendar for real lock-screen alerts.",
+  "version": "1.2.0",
+  "notes": "A mic button next to the type box opens the keyboard ready for dictation: tap it, tap the keyboard's mic and say \"pump 120 15 minutes\". After adding calendar reminders, Cradle now shows where the file was saved and how to open it.",
   "capabilities": {
     "db": {
       "rules": [

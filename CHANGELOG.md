@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0
+- Mic button next to the type box (and on the slim button row). It opens the keyboard on the box, so one more tap on the keyboard's mic lets you say an entry like "pump 120 15 minutes" or "fed 150 bottle". Web pages can't start dictation themselves, so the keyboard's mic key is the second tap.
+- After "Add to my calendar", a sheet explains where the file was saved and how to open it on iPhone, Android or a computer.
+- Fixed: a sheet that opened right after another one closed could disappear a moment later.
+
 ## 1.1.0
 - The Feed button shows which breast to start on next ("Next: Right").
 - The Feed button turns amber with "Due in 10m" or "Due now" when a feed is due, from the baby's own gaps (or the book's times in Phase 2).

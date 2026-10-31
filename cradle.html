@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.1.0">
+<meta name="cradle-version" content="1.2.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -142,6 +142,13 @@ p{margin:0}
 .typebox input::placeholder{color:var(--sub)}
 .sendbtn{width:52px;height:52px;border-radius:50%;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;flex:none}
 .sendbtn[aria-busy="true"]{opacity:.6}
+.micbtn{width:52px;height:52px;border-radius:50%;background:var(--card);border:1.5px solid var(--line);color:var(--ink);display:grid;place-items:center;flex:none}
+.micbtn:active{transform:scale(.94)}
+.dock.listening .typebox .micbtn{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.dock.listening .typebox input{border-color:var(--btn)}
+.micmini{display:none;position:absolute;top:2px;right:12px;width:44px;height:44px}
+html.hand-left .micmini{right:auto;left:12px}
+.dock.mini .micmini{display:grid}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .chips::-webkit-scrollbar{display:none}
 .chip{height:44px;padding:0 14px;border-radius:18px;background:var(--card);border:1.5px solid var(--line);font-size:14px;font-weight:500;white-space:nowrap;flex:none}
@@ -410,6 +417,7 @@ const IC = {
   drop: '<path d="M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z"/>',
   list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
   send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17h.01"/>',
   share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
   phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
@@ -1189,7 +1197,9 @@ function logDiaper(pee, poop, at) {
 
 /* ---------- sheets ---------- */
 let _sheetClose = null, _lastFocus = null;
+let _sheetHideT = null;
 function openSheet(title, html, onMount, onClose) {
+  clearTimeout(_sheetHideT);
   _lastFocus = document.activeElement;
   $("#sheetTitle").textContent = title;
   $("#sheetBody").innerHTML = html;
@@ -1204,7 +1214,7 @@ function closeSheet() {
   const sh = $("#sheet"), sc = $("#scrim");
   if (sh.hidden) return;
   sh.classList.remove("show"); sc.classList.remove("show");
-  setTimeout(() => { sh.hidden = true; sc.hidden = true; $("#sheetBody").innerHTML = ""; }, 200);
+  _sheetHideT = setTimeout(() => { sh.hidden = true; sc.hidden = true; $("#sheetBody").innerHTML = ""; }, 200);
   const fn = _sheetClose; _sheetClose = null; fn && fn();
   _lastFocus && _lastFocus.focus && _lastFocus.focus({ preventScroll: true });
 }
@@ -1601,8 +1611,10 @@ function renderDock(show) {
     dock.dataset.built = "1";
     dock.innerHTML = `
       <button type="button" class="dockgrip" id="dockGrip"><i aria-hidden="true"></i><span></span></button>
+      <button type="button" class="micbtn micmini" data-mic aria-label="Say an entry">${icon("mic")}</button>
       <form class="typebox" id="sayForm" autocomplete="off"><label for="say" class="sr">Type or say an entry</label>
         <input id="say" enterkeyhint="send" placeholder='Type or say: "fed 120ml 8:15"' value="${esc(ls.get("cradle.draft", ""))}">
+        <button type="button" class="micbtn" data-mic aria-label="Say an entry">${icon("mic")}</button>
         <button class="sendbtn" id="sayBtn" type="submit" aria-label="Log it">${icon("send")}</button></form>
       <div class="chiprow"><button type="button" class="swap" id="handSwap">${icon("hand")}<b></b></button>
       <div class="chips" role="group" aria-label="Shortcuts">${[["fed ", "fed"], ["pee", "pee"], ["poop", "poop"], ["down ", "down"], ["up ", "up"], ["bf L ", "breast L"], ["bf R ", "breast R"], ["pump", "pump"]].map(([c, l]) => `<button type="button" class="chip" data-chip="${c}">${l}</button>`).join("")}</div></div>
@@ -1616,6 +1628,20 @@ function renderDock(show) {
     applyChrome();
     $("#sayForm").onsubmit = ev => { ev.preventDefault(); submitText($("#say").value); };
     $("#say").oninput = ev => ls.set("cradle.draft", ev.target.value);
+    // A web page can't switch the keyboard to dictation itself, so the mic button opens the keyboard
+    // on the box (must happen inside the tap) and points at the keyboard's own mic key.
+    const PH = $("#say").placeholder;
+    $$("[data-mic]", dock).forEach(b => b.onclick = () => {
+      const i = $("#say");
+      if (dock.classList.contains("mini")) dock.classList.remove("mini");
+      i.value = ""; ls.set("cradle.draft", "");
+      i.placeholder = "Tap 🎤 on your keyboard, then talk";
+      dock.classList.add("listening");
+      i.focus();
+      if (S.prefs.dock === "min") savePrefs({ dock: "full" });
+      buzz();
+    });
+    $("#say").addEventListener("blur", () => { $("#say").placeholder = PH; dock.classList.remove("listening"); });
     $$("[data-chip]", dock).forEach(b => b.onclick = () => {
       const c = b.dataset.chip;
       if (c === "pee" || c === "poop") { submitText(c); return; }
@@ -1653,7 +1679,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. Check your connection. Anything you log is kept on this phone and synced later.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
@@ -1750,8 +1776,18 @@ function icsText() {
 }
 async function downloadReminders() {
   const data = icsText(), filename = `cradle-reminders-${(prof().name || "baby").toLowerCase().replace(/\W+/g, "-")}.ics`;
-  if (B.downloads) { try { await B.downloads.save({ filename, data }); toast("Open the file to add the reminders to your calendar"); markSetup("reminders"); return; } catch (e) { if (e && e.code === "declined") return; } }
-  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/calendar" })); a.download = filename; a.click(); toast("Open the file to add the reminders to your calendar"); markSetup("reminders"); } catch { toast("Couldn't make the calendar file here", [], { error: true }); }
+  if (B.downloads) { try { await B.downloads.save({ filename, data }); icsSaved(filename); markSetup("reminders"); return; } catch (e) { if (e && e.code === "declined") return; } }
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/calendar" })); a.download = filename; a.click(); icsSaved(filename); markSetup("reminders"); } catch { toast("Couldn't make the calendar file here", [], { error: true }); }
+}
+function icsSaved(filename) {
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
+  const steps = ios ? ["Open the <b>Files</b> app.", "Go to <b>Downloads</b> (under Browse, On My iPhone or iCloud Drive).", "Tap the file, then tap <b>Add All</b>."]
+    : android ? ["Tap the download notification, or open <b>Files</b> and go to <b>Downloads</b>.", "Tap the file and choose your calendar app.", "Save the events."]
+    : ["Open your <b>Downloads</b> folder.", "Double-click the file. Your calendar app opens.", "Choose a calendar and add the events."];
+  openSheet("Now add it to your calendar", `<p>The reminders were saved to your Downloads as <b>${esc(filename)}</b>. To add them:</p>
+    <ol class="steps">${steps.map(x => `<li>${x}</li>`).join("")}</ol>
+    <p class="sub small">Nothing appeared in Downloads? Check whether your browser asked to save the file and tap Save, then try again.</p>
+    <button type="button" class="btn big block" id="icsOk">Done</button>`, root => { $("#icsOk", root).onclick = closeSheet; });
 }
 function openReminders() {
   const ph = planDoc().phase, ds = dayStartOf(Date.now());
