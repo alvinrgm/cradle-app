@@ -1,0 +1,2128 @@
+<title>Cradle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#FBF6EF">
+<meta name="cradle-version" content="1.0.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+<style>
+/* Layout: one-thumb phone app. Glance up (status, totals), act down (dock + tab bar in the bottom third).
+   Tokens come from the Cradle Figma file. Night mode is a third, amber-only palette. */
+:root{
+  --bg:#FBF6EF; --card:#FFFFFF; --ink:#2B2733; --sub:#6B6476; --line:#EDE6DC; --scrim:rgba(43,39,51,.42);
+  --feed:#EE8F62; --feed-ink:#A9512A; --feed-soft:#FDE8DC;
+  --sleep:#7C83E8; --sleep-ink:#4A51BE; --sleep-soft:#E6E7FB;
+  --diaper:#4FAE88; --diaper-ink:#2A7558; --diaper-soft:#DDF2E8;
+  --poop:#9A6B4F; --poop-soft:#F1E4DA; --pee:#D9B23A; --pee-soft:#FBF1D2;
+  --plan:#D9A42E; --plan-ink:#80590C; --plan-soft:#FBF0D3;
+  --danger:#D4523C; --danger-ink:#A63623; --danger-soft:#FCE3DD;
+  --btn:#2B2733; --btn-ink:#FFFFFF; --focus:#4A51BE;
+  --feed-btn:#EE8F62; --feed-btn-ink:#241F2B; --sleep-btn:#5F66D6; --sleep-btn-ink:#FFFFFF; --diaper-btn:#4FAE88; --diaper-btn-ink:#14121B; --danger-btn:#BF4330; --danger-btn-ink:#FFFFFF;
+  --f-display:"Fraunces", Georgia, "Times New Roman", serif;
+  --f-body:"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-s:12px; --r-m:18px; --r-l:26px;
+  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp5:24px; --sp6:32px;
+  --dock-h:0px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#14121B; --card:#211E2B; --ink:#EEEAF3; --sub:#A69DB2; --line:#2F2B3B; --scrim:rgba(0,0,0,.6);
+  --feed:#EE8F62; --feed-ink:#F4AA86; --feed-soft:#3A2922;
+  --sleep:#8C92EE; --sleep-ink:#B2B6F6; --sleep-soft:#272948;
+  --diaper:#4FAE88; --diaper-ink:#86D3B3; --diaper-soft:#1C372D;
+  --poop:#C49478; --poop-soft:#382A22; --pee:#E2C15A; --pee-soft:#3A3219;
+  --plan:#E2B54B; --plan-ink:#EAC86F; --plan-soft:#352D18;
+  --danger:#E8735E; --danger-ink:#F29A88; --danger-soft:#43231D;
+  --feed-btn:#EE8F62; --feed-btn-ink:#14121B; --sleep-btn:#8C92EE; --sleep-btn-ink:#14121B; --diaper-btn:#4FAE88; --diaper-btn-ink:#14121B; --danger-btn:#E8735E; --danger-btn-ink:#14121B;
+  --btn:#EEEAF3; --btn-ink:#14121B; --focus:#B2B6F6; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#14121B; --card:#211E2B; --ink:#EEEAF3; --sub:#A69DB2; --line:#2F2B3B; --scrim:rgba(0,0,0,.6);
+  --feed:#EE8F62; --feed-ink:#F4AA86; --feed-soft:#3A2922;
+  --sleep:#8C92EE; --sleep-ink:#B2B6F6; --sleep-soft:#272948;
+  --diaper:#4FAE88; --diaper-ink:#86D3B3; --diaper-soft:#1C372D;
+  --poop:#C49478; --poop-soft:#382A22; --pee:#E2C15A; --pee-soft:#3A3219;
+  --plan:#E2B54B; --plan-ink:#EAC86F; --plan-soft:#352D18;
+  --danger:#E8735E; --danger-ink:#F29A88; --danger-soft:#43231D;
+  --feed-btn:#EE8F62; --feed-btn-ink:#14121B; --sleep-btn:#8C92EE; --sleep-btn-ink:#14121B; --diaper-btn:#4FAE88; --diaper-btn-ink:#14121B; --danger-btn:#E8735E; --danger-btn-ink:#14121B;
+  --btn:#EEEAF3; --btn-ink:#14121B; --focus:#B2B6F6; color-scheme:dark;
+}
+/* Night mode: dim amber only. No white, no blue light. Overrides every theme. */
+html.night:root{
+  --bg:#0D0A07; --card:#18120C; --ink:#D69B5E; --sub:#A0805A; --line:#2A2016; --scrim:rgba(0,0,0,.7);
+  --feed:#C4874B; --feed-ink:#E0A66A; --feed-soft:#24190F;
+  --sleep:#A87A47; --sleep-ink:#D9A064; --sleep-soft:#211710;
+  --diaper:#A0844E; --diaper-ink:#D3AC68; --diaper-soft:#1F1910;
+  --poop:#A07148; --poop-soft:#22180F; --pee:#B89452; --pee-soft:#231B0F;
+  --plan:#B98A45; --plan-ink:#D9A35E; --plan-soft:#22190E;
+  --danger:#C9693F; --danger-ink:#E08A5E; --danger-soft:#2A170D;
+  --feed-btn:#C4874B; --feed-btn-ink:#0D0A07; --sleep-btn:#A87A47; --sleep-btn-ink:#0D0A07; --diaper-btn:#A0844E; --diaper-btn-ink:#0D0A07; --danger-btn:#C9693F; --danger-btn-ink:#0D0A07;
+  --btn:#3A2A19; --btn-ink:#E8B47A; --focus:#E0A66A; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--f-body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:10px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- shell ---------- */
+#app{height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;position:relative}
+.view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:var(--sp4) calc(var(--dock-h) + 96px)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)}
+.h1{font:600 30px/1.1 var(--f-display);letter-spacing:-.01em}
+.h2{font:600 22px/1.15 var(--f-display)}
+.h3{font-size:17px;font-weight:600}
+.sub{color:var(--sub);font-size:14px}
+.small{font-size:13px}
+.stack{display:flex;flex-direction:column;gap:var(--sp3)}
+.row{display:flex;align-items:center;gap:var(--sp3)}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.card{background:var(--card);border-radius:var(--r-m);padding:var(--sp4)}
+.section{display:flex;flex-direction:column;gap:var(--sp3);margin-top:var(--sp5)}
+.section > .row h2{flex:1}
+
+.topbar{display:flex;align-items:flex-start;gap:var(--sp3);margin-bottom:var(--sp4)}
+.topbar .grow{display:flex;flex-direction:column;gap:2px}
+.iconbtn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--card);flex:none}
+.iconbtn:active{transform:scale(.94)}
+.ic{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:18px;height:18px}
+
+/* status pill */
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);font-weight:500}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--diaper)}
+.sync.busy i{background:var(--plan);animation:pulse 1s infinite}
+.sync.off i{background:var(--danger)}
+@keyframes pulse{50%{opacity:.3}}
+
+/* ---------- Today ---------- */
+.hero{display:flex;flex-direction:column;gap:6px}
+.hero .big{font:600 48px/1 var(--f-display);letter-spacing:-.02em}
+.meter{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--sleep)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp2)}
+.stat{background:var(--card);border-radius:var(--r-s);padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left}
+.stat b{font:600 20px/1.15 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat span{font-size:12px;color:var(--sub)}
+.stat.feed b{color:var(--feed-ink)} .stat.diaper b{color:var(--diaper-ink)} .stat.sleep b{color:var(--sleep-ink)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:3px 7px;white-space:nowrap}
+.tag.book{background:var(--plan-soft);color:var(--plan-ink)}
+.tag.tip{background:var(--sleep-soft);color:var(--sleep-ink)}
+.tag.aap{background:var(--diaper-soft);color:var(--diaper-ink)}
+.tag.claude{background:var(--line);color:var(--sub)}
+.advice{display:flex;flex-direction:column;gap:8px}
+.advice p{font-size:15px}
+
+.flag{background:var(--danger-soft);border-radius:var(--r-m);padding:var(--sp4);display:flex;flex-direction:column;gap:10px}
+.flag h3{font:600 20px/1.2 var(--f-display);color:var(--ink)}
+.flag .ico{width:40px;height:40px;border-radius:50%;background:var(--danger);display:grid;place-items:center;color:var(--card)}
+.okline{background:var(--diaper-soft);color:var(--diaper-ink);border-radius:var(--r-s);padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:14px}
+
+.timeline{display:flex;flex-direction:column}
+.tl{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);text-align:left;width:100%}
+.tl:last-child{border-bottom:0}
+.tl .t{width:68px;flex:none;color:var(--sub);font-size:13px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.d-feed{background:var(--feed)} .d-sleep{background:var(--sleep)} .d-diaper{background:var(--diaper)} .d-note{background:var(--sub)} .d-spit{background:var(--danger)}
+
+/* dock: type box + three tiles, sits above the tab bar */
+.dock{position:absolute;left:0;right:0;bottom:calc(72px + env(safe-area-inset-bottom, 0px));
+  padding:10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background:linear-gradient(to bottom, transparent, var(--bg) 18px);display:flex;flex-direction:column;gap:10px;z-index:5}
+.typebox{display:flex;gap:8px;align-items:center}
+.typebox input{flex:1;min-width:0;height:52px;border-radius:26px;border:1.5px solid var(--line);background:var(--card);padding:0 18px;font-size:16px}
+.typebox input::placeholder{color:var(--sub)}
+.sendbtn{width:52px;height:52px;border-radius:50%;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;flex:none}
+.sendbtn[aria-busy="true"]{opacity:.6}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{height:44px;padding:0 14px;border-radius:18px;background:var(--card);border:1.5px solid var(--line);font-size:14px;font-weight:500;white-space:nowrap;flex:none}
+.chip[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{position:relative;border-radius:var(--r-l);min-height:132px;padding:14px 8px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:transform .08s}
+.tile:active{transform:scale(.96)}
+.tile .ring{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.tile b{font-size:18px;font-weight:600}
+.tile span{font-size:12px;color:var(--sub);text-align:center;line-height:1.25}
+.tile.feed{background:var(--feed-soft)} .tile.feed .ring{background:var(--feed)}
+.tile.sleep{background:var(--sleep-soft)} .tile.sleep .ring{background:var(--sleep)}
+.tile.diaper{background:var(--diaper-soft)} .tile.diaper .ring{background:var(--diaper)}
+.tile.running{outline:3px solid var(--sleep);outline-offset:-3px}
+.tile.feed.running{outline-color:var(--feed)}
+html.night .tile .ring{color:var(--bg)}
+.tilewrap{position:relative;min-width:0;display:flex}
+.tilewrap .tile{flex:1;width:100%}
+.tilewrap .more{position:absolute;top:4px;right:4px;left:auto;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--sub)}
+.dockhint{font-size:12px;color:var(--sub);text-align:center}
+
+/* tab bar */
+.tabs{position:absolute;left:0;right:0;bottom:0;z-index:6;background:var(--card);display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+  border-top:1px solid var(--line)}
+.tab{text-decoration:none;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:500;color:var(--sub);border-radius:16px}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"] .tabic{background:var(--btn);color:var(--btn-ink)}
+.tabic{width:44px;height:30px;border-radius:15px;display:grid;place-items:center}
+
+/* ---------- buttons ---------- */
+.btn{min-height:56px;border-radius:28px;padding:0 22px;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:600;font-size:17px;background:var(--btn);color:var(--btn-ink);transition:transform .08s,opacity .1s}
+.btn:active{transform:scale(.97)}
+.btn.block{width:100%}
+.btn.big{min-height:72px;font-size:20px;border-radius:36px}
+.btn.ghost{background:var(--card);color:var(--ink);border:1.5px solid var(--line)}
+.btn.feed{background:var(--feed-btn);color:var(--feed-btn-ink)} .btn.sleep{background:var(--sleep-btn);color:var(--sleep-btn-ink)} .btn.diaper{background:var(--diaper-btn);color:var(--diaper-btn-ink)}
+.btn.danger{background:var(--danger-btn);color:var(--danger-btn-ink)}
+.btn.quiet{background:none;color:var(--danger-ink);min-height:48px}
+.btn[aria-busy="true"]{opacity:.6;pointer-events:none}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.link{color:var(--sleep-ink);font-weight:600;min-height:44px;display:inline-flex;align-items:center}
+
+/* ---------- lists ---------- */
+.list{background:var(--card);border-radius:var(--r-m);overflow:hidden}
+.li{display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:60px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.li:last-child{border-bottom:0}
+.li .meta{font-size:13px;color:var(--sub)}
+.li .val{color:var(--sub);font-size:14px;text-align:right}
+.badge{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff}
+html.night .badge{color:var(--bg)}
+.b-feed{background:var(--feed)} .b-sleep{background:var(--sleep)} .b-diaper{background:var(--diaper)} .b-poop{background:var(--poop)} .b-pee{background:var(--pee)} .b-note{background:var(--sub)} .b-spit{background:var(--danger)}
+.who{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;display:inline-grid;place-items:center;color:#fff;vertical-align:middle;flex:none}
+.days{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.days::-webkit-scrollbar{display:none}
+.daybtn{min-width:52px;height:60px;border-radius:14px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--sub);flex:none}
+.daybtn b{font-size:18px;color:var(--ink)}
+.daybtn[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink)}
+.daybtn[aria-pressed="true"] b{color:var(--btn-ink)}
+.seg{display:flex;background:var(--card);border-radius:16px;padding:4px;gap:4px}
+.seg button{flex:1;min-height:48px;border-radius:12px;font-weight:600;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--feed-btn);color:var(--feed-btn-ink)}
+
+.seg.dark button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink)}
+html.night .seg button[aria-pressed="true"]{color:var(--bg)}
+.empty{padding:28px 18px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;color:var(--sub)}
+.empty .h3{color:var(--ink)}
+.skel{background:linear-gradient(90deg,var(--line),var(--card),var(--line));background-size:200% 100%;animation:sh 1.2s infinite;border-radius:12px}
+@keyframes sh{to{background-position:-200% 0}}
+
+/* ---------- Plan ---------- */
+.ladder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.rung{min-height:64px;border-radius:14px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;text-align:center}
+.rung b{font-size:14px} .rung span{font-size:11px;color:var(--sub);line-height:1.2}
+.rung[aria-pressed="true"]{background:var(--plan);color:#fff} .rung[aria-pressed="true"] span{color:#fff}
+.rung.current{box-shadow:inset 0 0 0 2px var(--plan)}
+html.night .rung[aria-pressed="true"],html.night .rung[aria-pressed="true"] span{color:var(--bg)}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.tick{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;border:2px solid var(--line);color:transparent}
+.tick.on{background:var(--diaper);border-color:var(--diaper);color:#fff}
+.tick.part{border-color:var(--plan);color:var(--plan)}
+.rule{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.rule:last-child{border-bottom:0}
+.rule .tag{margin-top:2px}
+.strip{display:grid;grid-template-columns:44px 1fr;gap:6px 8px;align-items:center;font-size:12px;color:var(--sub)}
+.bar{position:relative;height:18px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}
+.bar .s{background:var(--sleep);opacity:.85}
+.bar .f{background:var(--feed);width:3px;margin-left:-1px}
+.bar .g{background:var(--plan);width:3px;margin-left:-1px}
+.bar .night{background:var(--sleep-soft)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);padding-left:52px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.claude-read{white-space:pre-wrap;font-size:15px}
+
+/* ---------- sheets ---------- */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;opacity:0;transition:opacity .18s}
+.scrim.show{opacity:1}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:520px;margin:0 auto;background:var(--bg);border-radius:28px 28px 0 0;
+  max-height:92%;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.sheet.show{transform:none}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 0;flex:none}
+.sheet .sh-head{display:flex;align-items:center;gap:10px;padding:10px max(20px, env(safe-area-inset-right, 0px)) 6px max(20px, env(safe-area-inset-left, 0px))}
+.sheet .sh-body{overflow-y:auto;padding:8px max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:14px}
+.bignum{font:600 88px/1 var(--f-display);letter-spacing:-.03em;text-align:center}
+.bignum small{font:500 22px var(--f-body);color:var(--sub);margin-left:4px;letter-spacing:0}
+.stepper{display:grid;grid-template-columns:72px 1fr 72px;align-items:center;gap:8px}
+.stepper .iconbtn{width:72px;height:72px;background:var(--feed-soft);color:var(--feed-ink)}
+.presets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.presets button{height:52px;border-radius:14px;background:var(--card);font-weight:600;border:2px solid transparent}
+.presets button[aria-pressed="true"]{border-color:var(--feed);background:var(--feed-soft);color:var(--feed-ink)}
+.field{display:flex;flex-direction:column;gap:4px;background:var(--card);border-radius:14px;padding:10px 14px}
+.field label,.field .lbl{font-size:12px;color:var(--sub);font-weight:500}
+.field input,.field select,.field textarea{border:0;background:none;font-size:17px;padding:2px 0;min-height:32px;width:100%;min-width:0}
+.field textarea{resize:vertical;min-height:64px}
+.fields2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.timer{font:600 64px/1 var(--f-display);text-align:center;letter-spacing:-.02em}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.side{min-height:120px;border-radius:22px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:3px solid transparent}
+.side b{font-size:20px} .side span{font-size:28px;font-family:var(--f-display);font-weight:600}
+.side[aria-pressed="true"]{border-color:var(--feed);background:var(--feed-soft)}
+.diaperbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.diaperbtns button{min-height:140px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:600}
+.diaperbtns .pee{background:var(--pee-soft)} .diaperbtns .poop{background:var(--poop-soft)} .diaperbtns .both{background:var(--diaper-soft)}
+.diaperbtns .ring{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:#fff}
+html.night .diaperbtns .ring{color:var(--bg)}
+.whenrow{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:calc(var(--dock-h) + 84px + env(safe-area-inset-bottom, 0px));z-index:30;
+  width:min(488px, calc(100% - 32px));background:var(--btn);color:var(--btn-ink);border-radius:18px;min-height:60px;padding:6px 6px 6px 16px;
+  display:flex;align-items:center;gap:6px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.toast.top{top:calc(12px + env(safe-area-inset-top, 0px));bottom:auto}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast .msg{flex:1;min-width:0;font-weight:500;font-size:15px}
+.toast button{min-height:48px;padding:0 12px;border-radius:12px;font-weight:700;color:var(--btn-ink);display:inline-flex;align-items:center;gap:6px}
+.toast.err button{color:inherit}
+.toast.err{background:var(--danger-btn);color:var(--danger-btn-ink)}
+.banner{border-radius:var(--r-s);padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center}
+.banner.demo{background:var(--plan-soft);color:var(--plan-ink)}
+.banner.warn{background:var(--danger-soft);color:var(--danger-ink)}
+.banner.info{background:var(--sleep-soft);color:var(--sleep-ink)}
+
+/* onboarding */
+.ob{min-height:100%;display:flex;flex-direction:column;gap:18px;padding-block:24px 32px}
+.moon{width:150px;height:150px;border-radius:50%;background:var(--sleep-soft);display:grid;place-items:center;margin:32px auto 8px;color:var(--sleep)}
+.hand{min-height:120px;border-radius:20px;background:var(--card);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.hand b{font:600 30px var(--f-display)}
+.hand[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.hand span{font-size:12px;opacity:.8}
+
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+html.night *{transition:none!important;animation:none!important}
+@media (min-width:560px){ #app{border-left:1px solid var(--line);border-right:1px solid var(--line)} }
+</style>
+<style>
+/* Free hand. Default is the right thumb: the biggest tile (Feed), the send button, the ••• buttons,
+   close buttons, toast actions and shortcut chips all sit on the right. Left hand mirrors every one of them. */
+.tiles{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,1fr)}
+.tilewrap.w-feed{order:3} .tilewrap.w-sleep{order:2} .tilewrap.w-diaper{order:1}
+.dock:not(.mini) .tile{min-height:140px}
+.chips{flex-direction:row-reverse}
+.diaperbtns{direction:rtl} .diaperbtns > *{direction:ltr}
+html.hand-left .tiles{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.45fr)}
+html.hand-left .tilewrap.w-feed{order:1} html.hand-left .tilewrap.w-diaper{order:3}
+html.hand-left .tilewrap .more{right:auto;left:4px}
+html.hand-left .typebox,html.hand-left .sheet .sh-head,html.hand-left .topbar{flex-direction:row-reverse}
+html.hand-left .chips{flex-direction:row}
+html.hand-left .diaperbtns{direction:ltr}
+html.hand-left .toast{flex-direction:row-reverse;padding:6px 16px 6px 6px}
+html.hand-left .toast .msg{text-align:right}
+.handnote{font-size:12px;color:var(--sub);text-align:center}
+.chiprow{display:flex;gap:6px;align-items:center;flex-direction:row-reverse}
+.chiprow .chips{flex:1;min-width:0}
+.swap{height:44px;min-width:56px;padding:0 10px;border-radius:18px;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;gap:4px;flex:none;font-weight:700;font-size:15px}
+.swap .ic{width:20px;height:20px}
+.swap:active{transform:scale(.94)}
+html.hand-left .chiprow{flex-direction:row}
+.dockgrip{align-self:center;height:28px;min-width:120px;margin:-6px 0 -4px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--sub);font-size:12px;font-weight:600;touch-action:none;position:relative}
+.dockgrip::before{content:"";position:absolute;inset:-8px -20px}
+.dockgrip i{width:36px;height:5px;border-radius:3px;background:var(--line)}
+.dock.mini{gap:8px}
+.dock.mini .typebox,.dock.mini .chiprow{display:none}
+.dock.mini .tile{min-height:56px;flex-direction:row;gap:8px;padding:6px 10px;border-radius:28px}
+.dock.mini .tile .ring{width:36px;height:36px}
+.dock.mini .tile .ring .ic{width:20px;height:20px}
+.dock.mini .tile b{font-size:15px;white-space:nowrap}
+.dock.mini .tile{padding:6px 6px}
+.dock.mini .tile .num,.dock.mini .tilewrap .more{display:none}
+.dock.mini .tile.feed{min-height:56px}
+.dock.mini .tiles{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr)}
+html.hand-left .dock.mini .tiles{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr)}
+.setup .tick{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.setup .tick.on{background:var(--diaper);border-color:var(--diaper);color:#fff}
+html.night .setup .tick.on{color:var(--bg)}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px;line-height:1.4}
+.b-pump{background:var(--plan)}
+.banner.pumping{background:var(--plan-soft);color:var(--plan-ink)}
+.btn.pumpbtn{background:var(--plan);color:var(--bg)}
+.pstep{display:flex;flex-direction:column;gap:4px;align-items:center}
+.fields2 .pstep .stepper{gap:6px}
+.fields2 .pstep .stepper .iconbtn{width:44px;height:44px}
+.fields2 .pstep .bignum{font-size:28px;min-width:0}
+.seg.units{flex:none}
+.seg.units button{min-width:56px;padding:0 10px}
+.lrsteps{display:grid;gap:4px}
+.lrsteps .pstep{flex-direction:row;justify-content:space-between}
+.lrsteps .pstep .lbl{font-weight:600;min-width:48px}
+.lrsteps .stepper .iconbtn{width:56px;height:56px}
+.lrsteps .bignum{font-size:36px;min-width:104px;justify-content:center;text-align:center}
+</style>
+
+<div id="app">
+  <main class="view" id="view" tabindex="-1" aria-live="off"></main>
+  <div class="dock" id="dock" hidden></div>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="grab" aria-hidden="true"></div>
+  <div class="sh-head"><h2 class="h2 grow" id="sheetTitle"></h2><button class="iconbtn" id="sheetClose" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="sh-body" id="sheetBody"></div>
+</section>
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="msg" id="toastMsg"></span><span id="toastActs" class="row" style="gap:2px"></span></div>
+<script>
+"use strict";
+/* ============================================================
+   Cradle core: state, storage, time math, derived numbers, parser
+   ============================================================ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const MIN = 60e3, HR = 36e5, DAY = 864e5, OZ = 29.5735, LB = 453.592;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+const IC = {
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  bottle: '<path d="M9 2h6M10 2v3L8 8v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8l-2-3V2M8 12h8"/>',
+  diaper: '<path d="M3 7h18v3a9 9 0 0 1-18 0z"/><path d="M8 7v2M16 7v2"/>',
+  home: '<path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-6h6v6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  check: '<path d="M5 12l5 5L20 7"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  chevron: '<path d="M9 6l6 6-6 6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  drop: '<path d="M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17h.01"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  scale: '<path d="M4 20h16l-2-12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+  hand: '<path d="M8 13V5a1.5 1.5 0 0 1 3 0v6M11 10V4a1.5 1.5 0 0 1 3 0v6M14 10V5.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7c-2.5 0-4-1-5.5-3L3 15a1.5 1.5 0 0 1 2.5-1.5L8 16"/>',
+  book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',
+  sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  people: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  pump: '<path d="M4 4h16l-6 7v6l-4 3v-9z"/>',
+  spit: '<path d="M12 3c4 3 6 6 6 9a6 6 0 0 1-12 0c0-3 2-6 6-9z"/><path d="M9 13h6"/>',
+  note: '<path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h5"/>',
+};
+const icon = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ""}</svg>`;
+
+/* ---------------- state ---------------- */
+const DEFAULT_PROFILE = {
+  name: "", birth_date: "", pronoun: "they", feeding: "both", bottle_ml_default: 150, units: "ml",
+  day_start: "08:00", bedtime: "20:00", sleep_place: "bassinet", pediatrician: { name: "", phone: "" },
+};
+const DEFAULT_PREFS = { hand: "right", theme: "auto", dock: "full", night: "auto", vibrate: true, seenIntro: false };
+const S = {
+  ready: false, slow: false, backend: "none",
+  profile: null, plan: null, events: new Map(), checks: new Map(), flags: new Map(),
+  got: { profile: false, plan: false, events: false },
+  me: null, people: {}, prefs: Object.assign({}, DEFAULT_PREFS, ls.get("cradle.prefs", {})),
+  demo: !!ls.get("cradle.demo", false), demoData: null,
+  pending: 0, failed: 0,
+  route: "today", logDay: null, logFilter: "all", planPhase: null, claudeRead: null,
+  ver: 0,
+};
+const D = () => (S.demo && S.demoData ? S.demoData : S);
+const prof = () => {
+  const p = Object.assign({}, DEFAULT_PROFILE, D().profile || {});
+  p.pediatrician = Object.assign({ name: "", phone: "" }, p.pediatrician || {});
+  return p;
+};
+const planDoc = () => Object.assign({ phase: 1, phase_started_at: null, history: [] }, D().plan || {});
+
+/* ---------------- capabilities + storage ---------------- */
+const B = { db: null, user: null, sample: null, downloads: null };
+async function useCap(name) {
+  try { return window.claude && window.claude.use ? await window.claude.use(name) : null; } catch { return null; }
+}
+
+const LOCAL_KEY = "cradle.local";
+function localLoad() {
+  const L = ls.get(LOCAL_KEY, null) || { profile: null, plan: null, events: {}, checks: {}, flags: {} };
+  S.profile = L.profile; S.plan = L.plan;
+  S.events = new Map(Object.entries(L.events || {}));
+  S.checks = new Map(Object.entries(L.checks || {}));
+  S.flags = new Map(Object.entries(L.flags || {}));
+}
+function localSave() {
+  ls.set(LOCAL_KEY, {
+    profile: S.profile, plan: S.plan,
+    events: Object.fromEntries(S.events), checks: Object.fromEntries(S.checks), flags: Object.fromEntries(S.flags),
+  });
+}
+
+function applyDoc(target, path, data) {
+  const [c, id] = path.split("/");
+  if (path === "baby/profile") target.profile = data;
+  else if (path === "plan/current") target.plan = data;
+  else if (c === "events") data ? target.events.set(id, data) : target.events.delete(id);
+  else if (c === "checks") data ? target.checks.set(id, data) : target.checks.delete(id);
+  else if (c === "flags") data ? target.flags.set(id, data) : target.flags.delete(id);
+}
+
+/* Outbox: every shared write is recorded on this phone first and cleared when the store confirms it.
+   A write that never confirmed (offline at 3 am, app closed) is replayed on next open. Writes are full-document sets, so replay is safe. */
+const outbox = {
+  all() { return ls.get("cradle.outbox", {}); },
+  put(path, data) { const o = this.all(); o[path] = { data, at: Date.now() }; ls.set("cradle.outbox", o); },
+  done(path) { const o = this.all(); delete o[path]; ls.set("cradle.outbox", o); },
+};
+
+async function write(path, data) { // data === null deletes
+  S.ver++;
+  if (S.demo && S.demoData) { applyDoc(S.demoData, path, data); scheduleRender(); return true; }
+  applyDoc(S, path, data);
+  scheduleRender();
+  if (!B.db) { localSave(); return true; }
+  outbox.put(path, data);
+  S.pending++; updateSync();
+  const run = () => (data === null ? B.db.doc(path).delete() : B.db.doc(path).set(data));
+  try {
+    try { await run(); }
+    catch (e) {
+      if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 800 + Math.random() * 1200)); await run(); }
+      else throw e;
+    }
+    outbox.done(path);
+    return true;
+  } catch (e) {
+    S.failed++;
+    const msg = e && e.code === "quota_exceeded" ? "Storage is full. Export and clear old entries in Me."
+      : e && (e.code === "not_granted" || e.code === "revoked") ? "You can view this log but not change it. Ask whoever shared it for edit access."
+      : "Couldn't save that yet. It's kept on this phone and will retry.";
+    toast(msg, [{ label: "Retry", fn: () => write(path, data) }], { error: true, ms: 8000 });
+    return false;
+  } finally { S.pending--; updateSync(); }
+}
+function replayOutbox() {
+  const o = outbox.all();
+  for (const [path, v] of Object.entries(o)) write(path, v.data);
+}
+
+async function connect() {
+  const [db, user, sample, downloads] = await Promise.all(["db", "user", "sample", "downloads"].map(useCap));
+  Object.assign(B, { db, user, sample, downloads });
+  if (user) {
+    try {
+      const id = await user.id();
+      const me = await user.me();
+      S.me = { id: id || me.id || null, name: me.name || "", color: me.color || "" };
+      if (S.me.id) S.people[S.me.id] = { name: me.name || "You", color: me.color, isMe: true };
+    } catch {}
+  }
+  if (!db) {
+    S.backend = "local"; localLoad(); S.ready = true;
+    scheduleRender(); return;
+  }
+  S.backend = "db";
+  const slowTimer = setTimeout(() => { if (!S.ready) { S.slow = true; scheduleRender(); } }, 10000);
+  const first = key => { S.got[key] = true; if (S.got.profile && S.got.events && S.got.plan && !S.ready) { S.ready = true; S.slow = false; clearTimeout(slowTimer); replayOutbox(); } };
+  const onErr = e => { S.slow = true; S.ready = true; clearTimeout(slowTimer); toast("Can't reach the shared log right now. New taps are kept on this phone.", [], { error: true, ms: 7000 }); scheduleRender(); };
+  db.doc("baby/profile").onSnapshot(s => { S.profile = s.exists ? s.data() : null; first("profile"); S.ver++; scheduleRender(); }, onErr);
+  db.doc("plan/current").onSnapshot(s => { S.plan = s.exists ? s.data() : null; first("plan"); S.ver++; scheduleRender(); }, onErr);
+  db.collection("events").orderBy("start_at", "desc").limit(1000).onSnapshot(q => {
+    S.events = new Map(q.docs.map(d => [d.id, d.data()])); first("events"); S.ver++; scheduleRender(); loadPeople();
+  }, onErr);
+  db.collection("checks").onSnapshot(q => { S.checks = new Map(q.docs.map(d => [d.id, d.data()])); S.ver++; scheduleRender(); }, () => {});
+  db.collection("flags").onSnapshot(q => { S.flags = new Map(q.docs.map(d => [d.id, d.data()])); S.ver++; scheduleRender(); }, () => {});
+  if (S.me && S.me.id) {
+    try {
+      const snap = await db.collection("data/users/" + S.me.id).doc("prefs").get();
+      if (snap.exists) { S.prefs = Object.assign({}, DEFAULT_PREFS, S.prefs, snap.data()); ls.set("cradle.prefs", S.prefs); applyChrome(); scheduleRender(); }
+    } catch {}
+  }
+}
+function savePrefs(patch) {
+  Object.assign(S.prefs, patch); ls.set("cradle.prefs", S.prefs); applyChrome(); scheduleRender();
+  if (B.db && S.me && S.me.id) B.db.collection("data/users/" + S.me.id).doc("prefs").set(S.prefs).catch(() => {});
+}
+async function loadPeople() {
+  if (!B.user) return;
+  const ids = new Set();
+  for (const e of S.events.values()) if (e.logged_by && !S.people[e.logged_by]) ids.add(e.logged_by);
+  if (!ids.size) return;
+  try {
+    const ps = await B.user.profiles([...ids]);
+    for (const [id, p] of Object.entries(ps)) S.people[id] = { name: p.name || "", color: p.color, isMe: p.isMe };
+    scheduleRender();
+  } catch {}
+}
+const personName = id => (id && S.people[id] && S.people[id].name) || (id ? "Someone" : "");
+const personShort = id => { const p = S.people[id]; if (!p) return ""; return p.isMe ? "You" : (p.name || "Someone").split(" ")[0]; };
+function whoDot(id) {
+  if (!id) return "";
+  const p = S.people[id] || {}; const n = (p.name || "?").trim();
+  return `<span class="who" style="background:${esc(p.color || "#7A7385")}" title="${esc(p.isMe ? "You" : n)}" aria-label="Logged by ${esc(p.isMe ? "you" : n)}">${esc(n[0] || "?")}</span>`;
+}
+
+/* ---------------- time ---------------- */
+const hm = s => { const [h, m] = String(s || "08:00").split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+function dayStartOf(t) {
+  const m = hm(prof().day_start), d = new Date(t);
+  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(m / 60), m % 60);
+  if (s.getTime() > t) s.setDate(s.getDate() - 1);
+  return s.getTime();
+}
+const shiftDay = (ds, n) => { const d = new Date(ds); d.setDate(d.getDate() + n); return d.getTime(); };
+const nextDayStart = ds => shiftDay(ds, 1);
+function bedOf(ds) {
+  let diff = hm(prof().bedtime) - hm(prof().day_start); if (diff <= 0) diff += 1440;
+  const d = new Date(ds); d.setMinutes(d.getMinutes() + diff); return d.getTime();
+}
+const fmtTime = t => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).replace(/\s?([AP])M/i, (m, a) => " " + a.toLowerCase() + "m");
+const fmtDay = t => new Date(t).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+const fmtDate = t => new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
+function fmtDur(ms) {
+  ms = Math.max(0, ms); const m = Math.round(ms / MIN);
+  if (m < 60) return m + "m";
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? `${h}h ${r}m` : `${h}h`;
+}
+function fmtClock(ms) {
+  ms = Math.max(0, ms); const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`;
+}
+function fmtVol(ml) {
+  if (ml == null || isNaN(ml)) return "";
+  if (prof().units === "oz") { const oz = Math.round((ml / OZ) * 2) / 2; return `${oz} oz`; }
+  return `${Math.round(ml)} ml`;
+}
+const volStep = () => (prof().units === "oz" ? OZ / 2 : 10);
+function fmtWeight(g) { const lbs = g / LB; const lb = Math.floor(lbs); const oz = Math.round((lbs - lb) * 16); return oz === 16 ? `${lb + 1} lb` : oz ? `${lb} lb ${oz} oz` : `${lb} lb`; }
+function toLocalInput(t) { const d = new Date(t); const p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+function toDateInput(t) { return toLocalInput(t).slice(0, 10); }
+function fromLocalInput(s) { const t = new Date(s).getTime(); return isNaN(t) ? null : t; }
+function birthMs() { const b = prof().birth_date; if (!b) return null; const [y, m, d] = b.split("-").map(Number); return new Date(y, m - 1, d).getTime(); }
+function ageDays(now = Date.now()) { const b = birthMs(); return b == null ? null : Math.floor((now - b) / DAY); }
+function ageStr(now = Date.now()) {
+  const d = ageDays(now); if (d == null) return "";
+  const w = Math.floor(d / 7), r = d % 7;
+  return w < 1 ? `${d} day${d === 1 ? "" : "s"}` : `${w} week${w === 1 ? "" : "s"}${r ? ` ${r} day${r === 1 ? "" : "s"}` : ""}`;
+}
+/* Resolve a clock time a parent typed ("8:15", "815", "3:10pm") to the most recent moment it could mean. */
+function resolveClock(h, m, ap, now = Date.now()) {
+  const cands = [];
+  const hours = ap ? [ap === "p" ? (h % 12) + 12 : h % 12] : h > 12 ? [h] : h === 12 ? [12, 0] : [h, h + 12];
+  for (const dd of [0, -1]) for (const hh of hours) {
+    const d = new Date(now); d.setDate(d.getDate() + dd); d.setHours(hh, m, 0, 0); cands.push(d.getTime());
+  }
+  const ok = cands.filter(t => t <= now + 15 * MIN).sort((a, b) => b - a);
+  return ok[0] ?? null;
+}
+
+/* ---------------- derived numbers (never stored) ---------------- */
+let _evCache = { ver: -1, demo: null, list: [] };
+function evs() {
+  if (_evCache.ver === S.ver && _evCache.demo === S.demo) return _evCache.list;
+  const list = [...D().events.entries()].map(([id, e]) => Object.assign({ id }, e)).filter(e => !e.deleted && typeof e.start_at === "number").sort((a, b) => a.start_at - b.start_at);
+  _evCache = { ver: S.ver, demo: S.demo, list }; return list;
+}
+const feeds = () => evs().filter(e => e.type === "feed");
+const sleeps = () => evs().filter(e => e.type === "sleep");
+const runningSleep = () => sleeps().filter(e => e.end_at == null).pop() || null;
+const runningBreast = () => feeds().filter(e => e.end_at == null && e.feed && e.feed.kind === "breast").pop() || null;
+const runningPump = () => evs().filter(e => e.type === "pump" && e.end_at == null).pop() || null;
+const lastPumpMl = () => { const p = evs().filter(e => e.type === "pump" && e.pump && e.pump.ml).pop(); return p ? p.pump.ml : null; };
+const lastFeed = () => feeds().slice(-1)[0] || null;
+const breastSec = (e, now = Date.now()) => {
+  const f = e.feed || {}; let l = f.l_sec || 0, r = f.r_sec || 0;
+  if (e.end_at == null && f.running_side && f.side_started_at) { const x = (now - f.side_started_at) / 1000; if (f.running_side === "L") l += x; else r += x; }
+  return { l, r, total: l + r };
+};
+const overlap = (a1, a2, b1, b2) => Math.max(0, Math.min(a2, b2) - Math.max(a1, b1));
+function feedLabel(e, short) {
+  const f = e.feed || {};
+  if (f.kind === "breast") {
+    const s = breastSec(e); const L = Math.round(s.l / 60), R = Math.round(s.r / 60);
+    const parts = []; if (L) parts.push(`L ${L}m`); if (R) parts.push(`R ${R}m`);
+    if (e.end_at == null) return "Breast · in progress";
+    return short ? `Breast ${parts.join(" · ") || ""}`.trim() : `Breast${parts.length ? " " + parts.join(" · ") : ""}`;
+  }
+  const milk = f.milk === "formula" ? " formula" : f.milk === "breastmilk" ? " breast milk" : "";
+  return `${short ? "" : "Bottle "}${fmtVol(f.ml)}${short ? " bottle" : milk}`.trim();
+}
+function evLabel(e) {
+  if (e.type === "feed") return feedLabel(e);
+  if (e.type === "sleep") return e.end_at == null ? "Asleep" : `Sleep ${fmtDur(e.end_at - e.start_at)}`;
+  if (e.type === "diaper") { const d = e.diaper || {}; return d.pee && d.poop ? "Pee + poop" : d.poop ? "Poop" : "Pee"; }
+  if (e.type === "pump") {
+    const p = e.pump || {}; if (e.end_at == null) return "Pumping";
+    const n = v => fmtVol(v || 0).split(" ")[0];
+    const lr = p.l_ml || p.r_ml ? ` (L ${n(p.l_ml)} · R ${n(p.r_ml)})` : "";
+    return `Pumped${p.ml != null ? " " + fmtVol(p.ml) : ""}${lr}${e.end_at > e.start_at + MIN ? ` · ${fmtDur(e.end_at - e.start_at)}` : ""}`;
+  }
+  if (e.type === "spit") return e.spit && e.spit.forceful ? "Forceful spit-up" : "Spit-up";
+  return "Note";
+}
+const evBadge = e => e.type === "diaper" ? (e.diaper && e.diaper.poop ? (e.diaper.pee ? "diaper" : "poop") : "pee") : e.type;
+const evIcon = e => ({ pump: "pump", feed: "bottle", sleep: "moon", diaper: "drop", spit: "spit", note: "note" }[e.type] || "note");
+
+function totals(a, b, now = Date.now()) {
+  const t = { feeds: 0, ml: 0, breastMin: 0, pee: 0, poop: 0, sleepMs: 0, naps: 0 };
+  for (const e of evs()) {
+    if (e.type === "feed" && e.start_at >= a && e.start_at < b) {
+      t.feeds++;
+      if (e.feed && e.feed.kind === "breast") t.breastMin += breastSec(e, now).total / 60;
+      else t.ml += (e.feed && e.feed.ml) || 0;
+    } else if (e.type === "diaper" && e.start_at >= a && e.start_at < b) {
+      if (e.diaper && e.diaper.pee) t.pee++;
+      if (e.diaper && e.diaper.poop) t.poop++;
+    } else if (e.type === "sleep") {
+      const ov = overlap(e.start_at, e.end_at ?? now, a, Math.min(b, now));
+      if (ov > 0) t.sleepMs += ov;
+      if (e.start_at >= a && e.start_at < b) t.naps++;
+    }
+  }
+  return t;
+}
+function avgGap(list) {
+  if (list.length < 2) return null;
+  let s = 0; for (let i = 1; i < list.length; i++) s += list[i].start_at - list[i - 1].start_at;
+  return s / (list.length - 1);
+}
+function targetFeeds(ds) { return [0, 4, 8, 12].map(h => ds + h * HR); }
+function _nextFeed(now = Date.now()) {
+  const ph = planDoc().phase, ds = dayStartOf(now), bed = bedOf(ds), lf = lastFeed();
+  if (now >= bed) return { night: true, text: ph >= 3 ? "Night. The plan fades one night feed at a time." : "Night. Feed when he's hungry." };
+  if (ph >= 2) {
+    const t = targetFeeds(ds).find(t => t > now - 20 * MIN);
+    if (t) return { at: t, text: "Phase 2 target feed", src: "book" };
+  }
+  if (!lf) return null;
+  const recent = feeds().filter(e => e.start_at > now - DAY);
+  let gap = avgGap(recent) || 3 * HR; gap = Math.min(4 * HR, Math.max(1.5 * HR, gap));
+  return { at: lf.start_at + gap, gap, text: `His recent average gap is ${fmtDur(gap)}` };
+}
+function latestCheck(kind) { return [...D().checks.values()].filter(c => c.kind === kind).sort((a, b) => b.at - a.at)[0] || null; }
+function doctorOk(phase) { return [...D().checks.values()].filter(c => c.kind === "doctor_ok" && c.phase === phase).sort((a, b) => b.at - a.at)[0] || null; }
+
+/* ---------------- days, nights and the pattern ---------------- */
+function dayStats(ds) {
+  const de = nextDayStart(ds), bed = bedOf(ds), now = Date.now(), end = Math.min(de, now);
+  const all = evs().filter(e => e.start_at < de && (e.end_at ?? now) >= ds);
+  const fs = all.filter(e => e.type === "feed" && e.start_at >= ds);
+  const dayF = fs.filter(e => e.start_at < bed), nightF = fs.filter(e => e.start_at >= bed);
+  const sl = all.filter(e => e.type === "sleep").map(e => ({ a: Math.max(ds, e.start_at), b: Math.min(end, e.end_at ?? now), raw: e }));
+  const daySleep = sl.reduce((s, x) => s + overlap(x.a, x.b, ds, bed), 0);
+  const nightSl = sl.filter(x => overlap(x.a, x.b, bed, de) > 0).map(x => ({ a: Math.max(x.a, bed - 3 * HR), b: x.b }));
+  const stretches = nightSl.map(x => x.b - Math.max(x.a, x.a));
+  const firstDown = sl.filter(x => x.raw.start_at >= bed - 2 * HR && x.raw.start_at < bed + 3 * HR).sort((a, b) => a.raw.start_at - b.raw.start_at)[0];
+  const bottles = dayF.filter(e => !(e.feed && e.feed.kind === "breast"));
+  return {
+    ds, de, bed, events: all.filter(e => e.start_at >= ds), feeds: fs, dayFeeds: dayF, nightFeeds: nightF,
+    ml: fs.reduce((s, e) => s + ((e.feed && e.feed.kind !== "breast" && e.feed.ml) || 0), 0),
+    breastMin: fs.reduce((s, e) => s + (e.feed && e.feed.kind === "breast" ? breastSec(e).total / 60 : 0), 0),
+    bottles, gap: avgGap(dayF), daySleep, naps: sl.filter(x => x.raw.start_at >= ds && x.raw.start_at < bed - HR).length,
+    sleeps: sl, longestNight: stretches.length ? Math.max(...stretches) : 0, nightWakings: Math.max(0, nightSl.length - 1),
+    downAt: firstDown ? firstDown.raw.start_at : null,
+    pee: all.filter(e => e.type === "diaper" && e.start_at >= ds && e.diaper && e.diaper.pee).length,
+    poop: all.filter(e => e.type === "diaper" && e.start_at >= ds && e.diaper && e.diaper.poop).length,
+    complete: de <= now,
+  };
+}
+function loggedDays(now = Date.now(), want = 4) {
+  const out = []; let ds = dayStartOf(now);
+  for (let i = 1; i <= 21 && out.length < want; i++) {
+    ds = shiftDay(dayStartOf(now), -i);
+    const st = dayStats(ds);
+    if (st.events.length >= 6 && st.feeds.length >= 3) out.push(st);
+  }
+  return out.reverse();
+}
+
+/* ---------------- the plan: phases, checks, coaching ---------------- */
+const PHASES_SRC = [
+  { n: 1, name: "Settle in", short: "Settle in",
+    when: "From birth until about 8 weeks and 9 lb.",
+    goal: "Learn his rhythm. Log everything, give full feeds and keep nights calm.",
+    book: [
+      ["Log everything", "Feeds, diapers and sleep. The pattern you build now is what the next phases work from."],
+      ["Offer full feeds, not snacks", "A full feed now means a longer, calmer gap after it."],
+      ["Same bedtime routine every night", "Same steps, same order, same time."],
+      ["Bright days, dark nights", "Daytime is light and busy. Nights are dark, quiet and boring."],
+      ["Limited crying", "A few minutes of fussing is OK. Go in for real crying, soothe him, and put him down awake."],
+      ["Don't restrict night feeds", "In Phase 1, feed at night whenever he's hungry."],
+    ],
+    tips: [
+      ["Keep night feeds dim", "Use the night screen and a small lamp, and skip the diaper change unless it's dirty or soaked."],
+      ["Feed after waking", "Many parents like eat, play, then sleep in the day, so feeding and falling asleep aren't linked. This comes from other methods, not this book."],
+    ] },
+  { n: 2, name: "Four feeds", short: "Four feeds",
+    when: "When he's about 8 weeks and 9 lb, and your pediatrician agrees.",
+    goal: "Shift daytime feeds toward four feeds about 4 hours apart.",
+    book: [
+      ["Four daytime feeds about 4 hours apart", "With an 8 am day: around 8 am, 12 pm, 4 pm and 8 pm."],
+      ["Move 15 minutes at a time", "Stretch each gap by about 15 minutes until the feeds land on the four times."],
+      ["Keep feeds full", "Fewer feeds means each one needs to be a full one."],
+      ["Night feeds stay for now", "Phase 2 changes the day. The night comes in Phase 3."],
+    ],
+    tips: [
+      ["Stretch with a cuddle or a walk", "If he's hungry early, try a change of scene first. If he's really hungry, feed him."],
+      ["Breastfeeding and four feeds", "Breastfed babies often need more than four feeds a day. Your pediatrician or a lactation consultant can say what's right for him."],
+    ] },
+  { n: 3, name: "Fade night feeds", short: "Night feeds",
+    when: "After a weight check and your pediatrician's OK.",
+    goal: "Drop night feeds gradually, one at a time, so calories move into the day.",
+    book: [
+      ["One night feed at a time", "Start with the smallest or latest one."],
+      ["Small steps", "Every few nights give about half an ounce (15 ml) less, or shift it 15 to 30 minutes later."],
+      ["Calories move to the day", "As a night feed shrinks, the daytime feeds grow."],
+      ["Weight check first", "Get a weight check and your pediatrician's sign-off before fading night feeds."],
+    ],
+    tips: [
+      ["Breastfeeding and supply", "Night feeds help keep milk supply up. Watch your supply as you fade them, and pump if you need to."],
+      ["Try a dream feed", "Some parents give a sleepy feed around 10 to 11 pm to stretch the first long sleep. This comes from other methods, not this book."],
+      ["A hungry baby gets fed", "If he's crying and hungry, feed him. You can try again in a few nights."],
+    ] },
+  { n: 4, name: "Naps", short: "Naps",
+    when: "Once nights are mostly settled.",
+    goal: "Settle a daily nap routine between the four feeds.",
+    book: [
+      ["Naps on a set pattern", "Naps fall at about the same times each day, between feeds."],
+      ["Keep feeds on schedule", "Wake him for a feed if a nap runs long, so the day doesn't steal from the night."],
+      ["Same bedtime", "Keep the same evening routine and a 12-hour night as the goal."],
+    ],
+    tips: [
+      ["Watch wake windows", "Around 3 to 4 months, many babies manage about 75 to 120 minutes awake before a nap. This comes from other methods, not this book."],
+    ] },
+];
+const CAVEATS_SRC = [
+  "Hold off on schedules and night weaning for premature babies, slow weight gain, reflux or other medical issues, unless your pediatrician says otherwise.",
+  "Breastfed babies often feed 8 to 12 times a day in the early weeks. Four feeds a day may be too few for him.",
+  "A 12-hour night at 12 weeks is a stretch goal, not a norm. Sleep varies a lot before 4 months.",
+];
+const SAFE_SLEEP_SRC = [
+  "On his back for every sleep, naps included.",
+  "A firm, flat surface: his bassinet or crib. No inclined sleepers, and no sleeping in car seats or swings once you're home.",
+  "Nothing soft in the bassinet: no pillows, blankets, bumpers or toys.",
+  "Stop swaddling at the first signs of trying to roll, often around 2 to 4 months.",
+];
+function _readiness(n, now = Date.now()) {
+  const p = prof(), name = p.name || "Baby", age = ageDays(now), w = latestCheck("weight");
+  const b = birthMs();
+  if (n === 2) return [
+    { label: "At least 8 weeks old", ok: age != null && age >= 56, meta: age == null ? "Add his birth date in Me" : age >= 56 ? `${name} is ${ageStr(now)}` : `${name} is ${ageStr(now)}. 8 weeks on ${fmtDate(b + 56 * DAY)}` },
+    { label: "At least 9 lb", ok: !!w && w.grams >= 9 * LB, meta: w ? `${fmtWeight(w.grams)} on ${fmtDate(w.at)}` : "No weight logged yet", act: "weight" },
+    { label: "Pediatrician says OK", ok: !!doctorOk(2), meta: doctorOk(2) ? `Logged ${fmtDate(doctorOk(2).at)}` : "Add it after a visit or call", act: "doctor2" },
+  ];
+  if (n === 3) {
+    const fresh = w && now - w.at < 14 * DAY;
+    return [
+      { label: "Recent weight check", ok: !!fresh, meta: w ? `${fmtWeight(w.grams)} on ${fmtDate(w.at)}${fresh ? "" : ", more than 2 weeks ago"}` : "No weight logged yet", act: "weight" },
+      { label: "Pediatrician OK to fade night feeds", ok: !!doctorOk(3), meta: doctorOk(3) ? `Logged ${fmtDate(doctorOk(3).at)}` : "Ask at the weight check", act: "doctor3" },
+      { label: "Daytime feeds are close to four", ok: (() => { const d = loggedDays(now, 3); return d.length >= 3 && d.every(x => x.dayFeeds.length <= 5); })(), meta: "From your last 3 logged days" },
+    ];
+  }
+  if (n === 4) {
+    const d = loggedDays(now, 3);
+    const avgNight = d.length ? d.reduce((s, x) => s + x.nightFeeds.length, 0) / d.length : null;
+    return [{ label: "Night feeds mostly gone", ok: avgNight != null && avgNight <= 0.5, meta: avgNight == null ? "Needs 3 logged days" : `About ${avgNight.toFixed(1)} night feeds a night lately` }];
+  }
+  return [];
+}
+
+function _coaching(now = Date.now()) {
+  const days = loggedDays(now, 4), ph = planDoc().phase, p = prof(), out = [];
+  if (days.length < 3) return { days, ready: false, out };
+  const def = p.bottle_ml_default || 150;
+  const bottles = days.flatMap(d => d.bottles);
+  const snacks = bottles.filter(e => (e.feed.ml || 0) < def * 0.6);
+  const bedtimes = days.map(d => d.downAt).filter(Boolean).map(t => { const x = new Date(t); return x.getHours() * 60 + x.getMinutes(); });
+  const target = hm(p.bedtime);
+  const offBed = bedtimes.filter(m => Math.abs(((m - target + 720) % 1440) - 720) > 30).length;
+  const nightFeeds = days.map(d => d.nightFeeds.length);
+  const avgNightFeeds = nightFeeds.reduce((a, b) => a + b, 0) / days.length;
+  const avgDayFeeds = days.reduce((s, d) => s + d.dayFeeds.length, 0) / days.length;
+  const gaps = days.map(d => d.gap).filter(Boolean); const gap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
+  if (ph === 1) {
+    if (bottles.length >= 4 && snacks.length / bottles.length >= 0.3) out.push({ src: "book", title: "Offer full feeds, not snacks", body: `${snacks.length} of ${bottles.length} bottles were under ${fmtVol(def * 0.6)}. Try offering the full ${fmtVol(def)} when he's awake and hungry.` });
+    if (bedtimes.length >= 3 && offBed >= 2) out.push({ src: "book", title: "Keep bedtime the same", body: `He went down within 30 minutes of ${fmtTime(new Date().setHours(Math.floor(target / 60), target % 60))} on ${bedtimes.length - offBed} of ${bedtimes.length} nights. Start the routine at the same time each night.` });
+    else if (bedtimes.length >= 3) out.push({ src: "book", title: "Bedtime is steady", body: `He went down close to bedtime on ${bedtimes.length - offBed} of ${bedtimes.length} nights. Keep it up.` });
+    if (gap && gap < 2.5 * HR) out.push({ src: "tip", title: "Bright light and play after daytime feeds", body: `Daytime feeds are about ${fmtDur(gap)} apart. Light and play after a feed help anchor the day.` });
+    const r = readiness(2, now); const okN = r.filter(x => x.ok).length;
+    out.push({ src: "book", title: okN === r.length ? "Ready for Phase 2 by the book's checks" : `Phase 2 checks: ${okN} of ${r.length} met`, body: r.map(x => `${x.ok ? "Done" : "Not yet"}: ${x.label.toLowerCase()}`).join(". ") + ". You can start any time, though." });
+  } else if (ph === 2) {
+    out.push({ src: "book", title: avgDayFeeds > 4.5 ? "Stretch one gap by 15 minutes" : "Daytime feeds are close to four", body: `He's averaging ${avgDayFeeds.toFixed(1)} daytime feeds${gap ? `, about ${fmtDur(gap)} apart` : ""}. The target is four, about 4 hours apart.` });
+    const t = targetFeeds(days[days.length - 1].ds).map(x => new Date(x).getHours() * 60 + new Date(x).getMinutes());
+    const offs = days.flatMap(d => d.dayFeeds.map(e => { const m = new Date(e.start_at).getHours() * 60 + new Date(e.start_at).getMinutes(); return Math.min(...t.map(x => Math.abs(m - x))); }));
+    if (offs.length) out.push({ src: "book", title: "Closest to the target times", body: `On average a feed lands ${Math.round(offs.reduce((a, b) => a + b, 0) / offs.length)} minutes from a target time. Move the earliest one 15 minutes later first.` });
+    out.push({ src: "tip", title: "Hungry early? Try a walk first", body: "If he's really hungry, feed him and try again tomorrow." });
+  } else if (ph === 3) {
+    const nf = days.flatMap(d => d.nightFeeds); const small = nf.filter(e => e.feed && e.feed.kind !== "breast").sort((a, b) => (a.feed.ml || 0) - (b.feed.ml || 0))[0];
+    out.push({ src: "book", title: avgNightFeeds > 0 ? `About ${avgNightFeeds.toFixed(1)} night feeds a night` : "No night feeds in the last few nights", body: avgNightFeeds > 0 ? `Pick one${small ? ` (the smallest lately was ${fmtVol(small.feed.ml)} at ${fmtTime(small.start_at)})` : ""} and give about ${fmtVol(15)} less every few nights.` : "Keep the daytime feeds full so the nights stay settled." });
+    const w = latestCheck("weight");
+    if (!w || now - w.at > 14 * DAY) out.push({ src: "book", title: "Get a weight check", body: "The book asks for a weight check and your pediatrician's OK before fading night feeds." });
+  } else {
+    const naps = days.reduce((s, d) => s + d.naps, 0) / days.length, ds2 = days.reduce((s, d) => s + d.daySleep, 0) / days.length;
+    out.push({ src: "book", title: `About ${naps.toFixed(1)} naps a day, ${fmtDur(ds2)} in total`, body: "Aim for naps at about the same times each day, between the four feeds." });
+    out.push({ src: "tip", title: "Watch wake windows", body: "If naps start with a fight, try putting him down a little earlier." });
+  }
+  const longest = Math.max(...days.map(d => d.longestNight));
+  if (longest) out.push({ src: "tip", title: `Longest night stretch: ${fmtDur(longest)}`, body: "This number usually grows week by week. Watching it beats watching any one night." });
+  return { days, ready: true, out, avgNightFeeds, avgDayFeeds };
+}
+
+/* ---------------- health flags ----------------
+   Prompts to call the pediatrician, never diagnoses. Wet-diaper count of 6+ a day comes from the frameworks doc (AAP feeding guidance);
+   other thresholds are conservative placeholders until a pediatric source is confirmed. */
+function _healthFlags(now = Date.now()) {
+  const all = evs(); if (all.length < 5) return [];
+  const first = all[0].start_at, name = prof().name || "he", out = [];
+  const dkey = new Date(dayStartOf(now)).toISOString().slice(0, 10);
+  const diapers = all.filter(e => e.type === "diaper");
+  if (now - first >= DAY && diapers.some(e => e.start_at > now - DAY)) {
+    const wet = diapers.filter(e => e.diaper && e.diaper.pee && e.start_at > now - DAY).length;
+    if (wet < 6) out.push({ key: "wet", title: `Only ${wet} wet diaper${wet === 1 ? "" : "s"} in the last 24 hours`, body: "Babies his age usually have 6 or more wet diapers a day. Fewer can mean not enough milk is going in. If that count is right, it's worth a call to your pediatrician today.", act: "diaper", actLabel: "Log a missed diaper" });
+  }
+  if (now - first >= 3 * DAY && diapers.length) {
+    const lastPoop = diapers.filter(e => e.diaper && e.diaper.poop).pop();
+    if (!lastPoop || now - lastPoop.start_at > 3 * DAY) out.push({ key: "poop", title: "No poop logged in 3 days", body: `If there's discomfort, a lot of straining, or a hard belly, call your pediatrician.`, act: "diaper", actLabel: "Log a missed diaper" });
+  }
+  const spit = all.filter(e => e.type === "spit" && e.spit && e.spit.forceful && e.start_at > now - DAY);
+  if (spit.length) out.push({ key: "spit", title: `Forceful spit-up logged ${spit.length > 1 ? spit.length + " times " : ""}today`, body: "Forceful or projectile spit-up is worth a call to your pediatrician, especially if it happens after several feeds." });
+  const days = loggedDays(now, 4);
+  if (days.length >= 4) {
+    const intake = d => d.ml + d.breastMin * 4; // rough: lets breast minutes count alongside bottle volume
+    const prev = days.slice(0, 3).reduce((s, d) => s + intake(d), 0) / 3, last = intake(days[3]);
+    if (prev > 0 && last < prev * 0.65) out.push({ key: "intake", title: "Feeds dropped off yesterday", body: `He took noticeably less than his recent average (${fmtVol(days[3].ml)} by bottle, against about ${fmtVol(days.slice(0, 3).reduce((s, d) => s + d.ml, 0) / 3)}). If he's feeding poorly today too, or seems unwell, call your pediatrician.` });
+  }
+  if (planDoc().phase >= 3) {
+    const w = latestCheck("weight");
+    if (!w || now - w.at > 21 * DAY) out.push({ key: "weigh", title: "Time for a weight check", body: "You're fading night feeds. The book asks for a weight check and your pediatrician's OK along the way.", act: "weight", actLabel: "Log a weight", soft: true });
+  }
+  return out.filter(f => !D().flags.has(`${f.key}-${dkey}`)).map(f => Object.assign(f, { id: `${f.key}-${dkey}` }));
+}
+
+/* ---------------- shorthand parser ---------------- */
+function parseShorthand(text, now = Date.now()) {
+  const parts = String(text).toLowerCase().replace(/\b(pee|wet) (and|&|\+) (poop|poo)\b|\b(poop|poo) (and|&|\+) (pee|wet)\b/g, "both").split(/[,;\n]+|\s+and\s+|\s+then\s+/).map(s => s.trim()).filter(Boolean);
+  const out = [], unclear = [];
+  const amtRe = /(\d+(?:\.\d+)?)\s*(ml|mls|cc|oz|ounces?)\b/;
+  const minRe = /(\d+)\s*(m|min|mins|minutes)\b/g;
+  const timeOf = s => {
+    s = s.replace(amtRe, " ").replace(/(\d+)\s*(m|min|mins|minutes)\b/g, " ");
+    let h, mi = 0, ap = null, m;
+    if ((m = s.match(/(\d{1,2}):(\d{2})\s*(am|pm|a|p)?\b/))) { h = +m[1]; mi = +m[2]; ap = m[3] ? m[3][0] : null; }
+    else if ((m = s.match(/\b(\d{1,2})(\d{2})\s*(am|pm|a|p)?\b/))) { h = +m[1]; mi = +m[2]; ap = m[3] ? m[3][0] : null; }
+    else if ((m = s.match(/\b(\d{1,2})\s*(am|pm|a|p)\b/))) { h = +m[1]; ap = m[2][0]; }
+    else if ((m = s.match(/\bat\s+(\d{1,2})\b/))) { h = +m[1]; }
+    else return null;
+    if (h > 23 || mi > 59) return null;
+    return resolveClock(h, mi, ap, now);
+  };
+  const twoTimes = s => {
+    const m = s.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm|a|p)?)\s*(?:-|–|to|until|till)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm|a|p)?)/);
+    if (!m) return null;
+    const a = timeOf(m[1].includes(":") || /[ap]/.test(m[1]) ? m[1] : "at " + m[1]), b = timeOf(m[2].includes(":") || /[ap]/.test(m[2]) ? m[2] : "at " + m[2]);
+    if (a == null || b == null) return null;
+    return [b < a ? a - DAY : a, b];
+  };
+  let openSleep = runningSleep();
+  for (const raw of parts) {
+    const s = " " + raw + " ";
+    const t = timeOf(s);
+    if (/\bpump(s|ed|ing)?\b/.test(s) && !/\b(fed|feed|bottle|ate)\b/.test(s)) {
+      const toMl = (v, u) => Math.round((u ? /oz|ounce/.test(u) : prof().units === "oz" && v <= 12) ? v * OZ : v);
+      const lm = s.match(/\b(?:l|left)\s*(\d+(?:\.\d+)?)\s*(ml|oz|ounces?)?/), rm = s.match(/\b(?:r|right)\s*(\d+(?:\.\d+)?)\s*(ml|oz|ounces?)?/);
+      let ml = null, l = null, r = null;
+      if (lm || rm) { l = lm ? toMl(+lm[1], lm[2]) : 0; r = rm ? toMl(+rm[1], rm[2]) : 0; ml = l + r; }
+      else {
+        const a = s.match(amtRe);
+        if (a) ml = toMl(+a[1], a[2]);
+        else { const m2 = s.replace(/\d{1,2}:\d{2}\s*(am|pm|a|p)?\b/g, " ").replace(/\b\d{1,2}\s*(am|pm|a|p)\b/g, " ").replace(/\bat\s+\d{1,4}\b/g, " ").replace(/\d+\s*(m|min|mins|minutes)\b/g, " ").match(/\b(\d{1,3}(?:\.\d+)?)\b/); if (m2 && +m2[1] > 0 && +m2[1] <= 400) ml = toMl(+m2[1]); }
+      }
+      const t = /\d{1,2}:\d{2}|\b\d{1,4}\s*(am|pm|a|p)\b|\bat\s+\d/.test(s) ? timeOf(s) : null; // "pump 120" is an amount, not 1:20
+      const mins = [...s.replace(amtRe, " ").matchAll(minRe)].map(m => +m[1])[0] || 0, range = twoTimes(s), run = runningPump();
+      const pump = { ml, l_ml: l, r_ml: r };
+      if (ml == null && !range && !mins && t == null) { out.push(run ? { type: "pumpdone", target: run, end_at: now, pump } : { type: "pump", start_at: now, end_at: null, pump }); continue; }
+      if (run && t == null && !range) { out.push({ type: "pumpdone", target: run, end_at: now, pump }); continue; }
+      const start = range ? range[0] : (t ?? now - mins * MIN), end = range ? range[1] : start + mins * MIN;
+      out.push({ type: "pump", start_at: start, end_at: end, pump }); continue;
+    }
+    if (/\b(spit|spat|spitup|vomit|threw up|projectile)\b/.test(s)) { out.push({ type: "spit", start_at: t ?? now, spit: { forceful: /(projectile|forceful|vomit|threw up)/.test(s) } }); continue; }
+    if (/^\s*note\b/.test(s)) { out.push({ type: "note", start_at: now, note: raw.replace(/^note\s*/, "") }); continue; }
+    const pee = /\b(pee|peed|wet|wee)\b/.test(s), poop = /\b(poop|poo|pooped|dirty|bm|poopy)\b/.test(s), both = /\bboth\b/.test(s) && !/\bsides?\b/.test(s);
+    if (pee || poop || (both && !/\b(fed|feed|bf|breast)\b/.test(s))) { out.push({ type: "diaper", start_at: t ?? now, diaper: { pee: pee || both, poop: poop || both } }); continue; }
+    const range = twoTimes(s);
+    if (/\b(down|asleep|slept|sleep|sleeping|nap|napped|napping|out)\b/.test(s)) {
+      if (range) out.push({ type: "sleep", start_at: range[0], end_at: range[1] });
+      else { const e = { type: "sleep", start_at: t ?? now, end_at: null }; out.push(e); openSleep = e; }
+      continue;
+    }
+    if (/\b(up|awake|woke|wake|waking)\b/.test(s)) {
+      if (openSleep) out.push({ type: "wake", end_at: t ?? now, target: openSleep });
+      else unclear.push(raw);
+      continue;
+    }
+    const amt = s.match(amtRe);
+    const breast = /\b(bf|breast|breastfed|nursed|nurse|nursing|boob|left|right|l|r)\b/.test(s);
+    if (/\b(fed|feed|bottle|ate|formula|bf|breast|breastfed|nursed|nurse|nursing|ml|oz|boob)\b/.test(s) || amt) {
+      if (breast && !amt) {
+        const mins = [...s.matchAll(minRe)].map(m => +m[1]);
+        let l = 0, r = 0; const lm = s.match(/\b(?:l|left)\s*(\d+)/), rm = s.match(/\b(?:r|right)\s*(\d+)/);
+        if (lm || rm) { l = lm ? +lm[1] : 0; r = rm ? +rm[1] : 0; }
+        else if (mins.length) { if (/\b(r|right)\b/.test(s)) r = mins[0]; else if (/\b(l|left)\b/.test(s)) l = mins[0]; else { l = mins[0]; r = mins[1] || 0; } }
+        const total = (l + r) * MIN || 15 * MIN;
+        const start = t ?? now - total;
+        out.push({ type: "feed", start_at: start, end_at: start + total, feed: { kind: "breast", l_sec: l * 60, r_sec: r * 60, side: l && r ? "both" : r ? "R" : "L" } });
+      } else {
+        let ml = amt ? (/oz|ounce/.test(amt[2]) ? +amt[1] * OZ : +amt[1]) : null, at = t;
+        if (!amt) { // a bare number next to "fed"/"bottle" is an amount ("fed 120"), unless it reads as a time
+          const m2 = s.replace(/\d{1,2}:\d{2}\s*(am|pm|a|p)?\b/g, " ").replace(/\b\d{1,2}\s*(am|pm|a|p)\b/g, " ").replace(/\bat\s+\d{1,4}\b/g, " ").match(/\b(\d{1,3}(?:\.\d+)?)\b/);
+          if (m2) { const v = +m2[1]; const bare = prof().units === "oz" && v <= 10 ? v * OZ : v >= 20 && v <= 300 ? v : null; if (bare) { ml = bare; at = timeOf(s.replace(m2[0], " ")); } }
+        }
+        if (ml == null) ml = lastBottleMl() || prof().bottle_ml_default;
+        out.push({ type: "feed", start_at: at ?? now, end_at: null, feed: { kind: "bottle", ml: Math.round(ml), milk: /formula/.test(s) ? "formula" : /\b(bm|breast ?milk|pumped|ebm)\b/.test(s) ? "breastmilk" : null } });
+      }
+      continue;
+    }
+    unclear.push(raw);
+  }
+  return { entries: out, unclear };
+}
+function lastBottleMl() { const b = feeds().filter(e => e.feed && e.feed.kind !== "breast").pop(); return b ? b.feed.ml : null; }
+
+/* ---------------- sample data for the preview (memory only) ---------------- */
+function buildDemo() {
+  const p = Object.assign({}, DEFAULT_PROFILE, S.profile || {}, { name: (S.profile && S.profile.name) || "Sam", birth_date: (S.profile && S.profile.birth_date) || new Date(Date.now() - 35 * DAY).toISOString().slice(0, 10) });
+  const T = { profile: p, plan: Object.assign({ phase: 1 }, S.plan || {}), events: new Map(), checks: new Map(), flags: new Map() };
+  T.checks.set("w1", { kind: "weight", at: new Date(2026, 9, 23).getTime(), grams: 10 * LB });
+  const now = Date.now(); let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const add = e => T.events.set(newId() + Math.floor(rnd() * 1e6), Object.assign({ source: "tap", logged_by: S.me && S.me.id, created_at: e.start_at }, e));
+  const savedProfile = S.profile; S.profile = p; // dayStartOf reads prof()
+  for (let d = 4; d >= 0; d--) {
+    const ds = shiftDay(dayStartOf(now), -d);
+    let t = ds + 10 * MIN + rnd() * 20 * MIN;
+    while (t < ds + 24 * HR && t < now) {
+      const night = t >= bedOf(ds);
+      const br = rnd() < 0.25 && !night;
+      add({ type: "feed", start_at: t, end_at: br ? t + 20 * MIN : null, feed: br ? { kind: "breast", l_sec: 600 + rnd() * 300, r_sec: 300 + rnd() * 300, side: "both" } : { kind: "bottle", ml: Math.round((night ? 90 : 100 + rnd() * 60) / 10) * 10, milk: rnd() < 0.5 ? "breastmilk" : "formula" } });
+      if (t + 20 * MIN < now) add({ type: "diaper", start_at: t + 15 * MIN, diaper: { pee: true, poop: rnd() < 0.3 } });
+      const s0 = t + (night ? 30 : 60 + rnd() * 30) * MIN, len = (night ? 150 + rnd() * 80 : 50 + rnd() * 60) * MIN;
+      if (s0 < now) add({ type: "sleep", start_at: s0, end_at: s0 + len < now ? s0 + len : null, sleep: { place: "bassinet" } });
+      t = s0 + len + (night ? 10 : 15) * MIN;
+    }
+  }
+  S.profile = savedProfile;
+  return T;
+}
+
+/* ---------------- pronouns (he / she / they, set in the baby's profile) ---------------- */
+const PRON = {
+  she: { "he": "she", "He": "She", "he's": "she's", "He's": "She's", "his": "her", "His": "Her", "him": "her" },
+  they: { "he": "they", "He": "They", "he's": "they're", "He's": "They're", "his": "their", "His": "Their", "him": "them" },
+};
+function pr(s) {
+  const m = PRON[(S.profile || {}).pronoun || (S.demo ? "he" : DEFAULT_PROFILE.pronoun)];
+  return !m || typeof s !== "string" ? s : s.replace(/\b(He's|he's|He|he|His|his|him)\b/g, w => m[w] || w);
+}
+const prDeep = v => typeof v === "string" ? pr(v) : Array.isArray(v) ? v.map(prDeep) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, prDeep(x)])) : v;
+let PHASES = PHASES_SRC, CAVEATS = CAVEATS_SRC, SAFE_SLEEP = SAFE_SLEEP_SRC, _prKey = null;
+function applyPronouns() {
+  const k = (S.profile || {}).pronoun || (S.demo ? "he" : DEFAULT_PROFILE.pronoun); if (k === _prKey) return; _prKey = k;
+  PHASES = prDeep(PHASES_SRC); CAVEATS = prDeep(CAVEATS_SRC); SAFE_SLEEP = prDeep(SAFE_SLEEP_SRC);
+}
+applyPronouns();
+function nextFeed(...a) { const r = _nextFeed(...a); if (r && r.text) r.text = pr(r.text); return r; }
+function readiness(...a) { return _readiness(...a).map(x => Object.assign(x, { label: pr(x.label), meta: pr(x.meta) })); }
+function coaching(...a) { const r = _coaching(...a); r.out = r.out.map(o => Object.assign(o, { title: pr(o.title), body: pr(o.body) })); return r; }
+function healthFlags(...a) { return _healthFlags(...a).map(o => Object.assign(o, { title: pr(o.title), body: pr(o.body) })); }
+/* ============================================================
+   Cradle UI: render loop, views, sheets, actions
+   ============================================================ */
+let _raf = 0;
+function scheduleRender() { if (_raf) return; _raf = requestAnimationFrame(() => { _raf = 0; render(); }); }
+function isNight(now = Date.now()) {
+  if (S.prefs.night === "on") return true;
+  if (S.prefs.night === "off") return false;
+  const ds = dayStartOf(now); return now >= bedOf(ds);
+}
+function applyChrome() {
+  const root = document.documentElement;
+  root.classList.toggle("night", isNight());
+  root.classList.toggle("hand-left", S.prefs.hand === "left");
+  if (S.prefs.theme === "light" || S.prefs.theme === "dark") root.dataset.theme = S.prefs.theme; else delete root.dataset.theme;
+  const sw = $("#handSwap");
+  if (sw) { const to = S.prefs.hand === "left" ? "right" : "left"; sw.setAttribute("aria-label", `Switch buttons to the ${to} hand`); sw.querySelector("b").textContent = S.prefs.hand === "left" ? "L" : "R"; }
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = getComputedStyle(root).getPropertyValue("--bg").trim() || "#FBF6EF";
+}
+function buzz() { if (S.prefs.vibrate && !isNight()) try { navigator.vibrate && navigator.vibrate(12); } catch {} }
+function updateSync() {
+  const el = $("#sync"); if (!el) return;
+  el.className = "sync" + (S.pending ? " busy" : S.slow || (S.backend === "db" && !navigator.onLine) ? " off" : "");
+  el.querySelector("span").textContent = S.demo ? "Sample day" : S.backend === "local" ? "On this phone" : S.pending ? "Saving…" : S.slow || !navigator.onLine ? "Offline, will sync" : "Saved";
+}
+const syncPill = () => `<span class="sync" id="sync"><i></i><span></span></span>`;
+
+/* ---------- toast with Undo / Edit ---------- */
+let _toastT = 0;
+function toast(msg, acts = [], o = {}) {
+  const t = $("#toast"); $("#toastMsg").textContent = msg;
+  const box = $("#toastActs"); box.innerHTML = "";
+  for (const a of acts) {
+    const b = document.createElement("button"); b.type = "button";
+    b.innerHTML = (a.icon ? icon(a.icon, "s") : "") + esc(a.label);
+    b.onclick = () => { hideToast(); a.fn(); }; box.appendChild(b);
+  }
+  t.classList.toggle("err", !!o.error); t.classList.toggle("top", sheetOpen()); t.classList.add("show");
+  clearTimeout(_toastT); _toastT = setTimeout(hideToast, o.ms || 6000);
+}
+function hideToast() { $("#toast").classList.remove("show"); }
+
+/* ---------- events: create, change, undo ---------- */
+function baseEvent(type, extra) {
+  const now = Date.now();
+  return Object.assign({ type, start_at: now, end_at: null, source: "tap", raw_text: null, logged_by: (S.me && S.me.id) || null, created_at: now, updated_at: now, deleted: false }, extra);
+}
+async function createEvent(e, o = {}) {
+  const id = o.id || newId();
+  await write("events/" + id, e);
+  buzz();
+  if (!o.silent) toast(o.msg || `${evLabel(e)} logged · ${fmtTime(e.start_at)}`, [
+    { label: "Edit", icon: "edit", fn: () => openEdit(id) },
+    { label: "Undo", icon: "undo", fn: () => { write("events/" + id, null); toast("Removed"); } },
+  ]);
+  return id;
+}
+function getEvent(id) { const e = D().events.get(id); return e ? Object.assign({}, e, { feed: e.feed && { ...e.feed }, diaper: e.diaper && { ...e.diaper }, sleep: e.sleep && { ...e.sleep }, spit: e.spit && { ...e.spit }, pump: e.pump && { ...e.pump } }) : null; }
+async function changeEvent(id, patch, o = {}) {
+  const before = getEvent(id); if (!before) return;
+  const after = Object.assign({}, before, patch, { updated_at: Date.now(), updated_by: (S.me && S.me.id) || null });
+  await write("events/" + id, after);
+  if (o.msg) toast(o.msg, [{ label: "Undo", icon: "undo", fn: () => write("events/" + id, before) }]);
+}
+
+/* quick actions from the tiles */
+function quickFeed() {
+  const rb = runningBreast(); if (rb) return openFeed({ id: rb.id });
+  const lf = lastFeed(), p = prof();
+  const breastFirst = lf ? lf.feed && lf.feed.kind === "breast" : p.feeding === "breast";
+  if (breastFirst) {
+    const lastSide = lf && lf.feed ? (lf.feed.last_side || (lf.feed.side === "R" ? "R" : "L")) : "R";
+    return startBreast(lastSide === "L" ? "R" : "L");
+  }
+  const ml = lastBottleMl() || p.bottle_ml_default || 150;
+  createEvent(baseEvent("feed", { feed: { kind: "bottle", ml, milk: (lf && lf.feed && lf.feed.milk) || null } }));
+}
+async function startBreast(side) {
+  const now = Date.now();
+  const id = await createEvent(baseEvent("feed", { start_at: now, feed: { kind: "breast", l_sec: 0, r_sec: 0, side, running_side: side, side_started_at: now, last_side: side } }), { silent: true });
+  buzz(); openFeed({ id });
+}
+function quickSleep() {
+  const rs = runningSleep();
+  if (rs) return endSleep(rs.id, Date.now());
+  createEvent(baseEvent("sleep", { sleep: { place: prof().sleep_place } }), { msg: `Sleep started · ${fmtTime(Date.now())}` });
+}
+function endSleep(id, at) {
+  const e = getEvent(id); if (!e) return;
+  const dur = at - e.start_at, ds = dayStartOf(at);
+  changeEvent(id, { end_at: at }, { msg: `${pr("He's up")} · ${fmtDur(dur)} ${e.start_at >= bedOf(dayStartOf(e.start_at)) || at < ds + 30 * MIN ? "sleep" : "nap"}` });
+  buzz();
+}
+function logDiaper(pee, poop, at) {
+  closeSheet();
+  createEvent(baseEvent("diaper", { start_at: at || Date.now(), diaper: { pee, poop } }));
+}
+
+/* ---------- sheets ---------- */
+let _sheetClose = null, _lastFocus = null;
+function openSheet(title, html, onMount, onClose) {
+  _lastFocus = document.activeElement;
+  $("#sheetTitle").textContent = title;
+  $("#sheetBody").innerHTML = html;
+  const sh = $("#sheet"), sc = $("#scrim");
+  sh.hidden = false; sc.hidden = false;
+  requestAnimationFrame(() => { sh.classList.add("show"); sc.classList.add("show"); });
+  _sheetClose = onClose || null;
+  if (onMount) onMount($("#sheetBody"));
+  setTimeout(() => { const f = sh.querySelector("[autofocus]") || $("#sheetClose"); f && f.focus({ preventScroll: true }); }, 60);
+}
+function closeSheet() {
+  const sh = $("#sheet"), sc = $("#scrim");
+  if (sh.hidden) return;
+  sh.classList.remove("show"); sc.classList.remove("show");
+  setTimeout(() => { sh.hidden = true; sc.hidden = true; $("#sheetBody").innerHTML = ""; }, 200);
+  const fn = _sheetClose; _sheetClose = null; fn && fn();
+  _lastFocus && _lastFocus.focus && _lastFocus.focus({ preventScroll: true });
+}
+const sheetOpen = () => !$("#sheet").hidden;
+
+function whenChips(name, sel = 0) {
+  const opts = [[0, "Now"], [5, "5 min ago"], [15, "15 min ago"], [30, "30 min ago"], [-1, "Pick a time"]];
+  return `<div class="field"><span class="lbl" id="${name}Lbl">When</span><div class="whenrow" role="group" aria-labelledby="${name}Lbl">${opts.map(([v, l]) => `<button type="button" class="chip" data-when="${v}" aria-pressed="${v === sel}">${l}</button>`).join("")}</div>
+  <input type="datetime-local" id="${name}Pick" hidden aria-label="Pick a time"></div>`;
+}
+function wireWhen(root, name) {
+  let ago = 0; const pick = $("#" + name + "Pick", root);
+  pick.value = toLocalInput(Date.now()); pick.max = toLocalInput(Date.now() + 10 * MIN);
+  $$("[data-when]", root).forEach(b => b.onclick = () => {
+    ago = +b.dataset.when; $$("[data-when]", root).forEach(x => x.setAttribute("aria-pressed", x === b));
+    pick.hidden = ago !== -1; if (ago === -1) pick.focus();
+  });
+  return () => ago === -1 ? (fromLocalInput(pick.value) || Date.now()) : Date.now() - ago * MIN;
+}
+
+/* Feed sheet: bottle or breast. Breast runs as a live, saved timer so it survives the phone locking. */
+function openFeed(o = {}) {
+  const rb = o.id ? getEvent(o.id) : null;
+  let kind = rb && rb.feed.kind === "breast" ? "breast" : o.kind || (prof().feeding === "breast" ? "breast" : "bottle");
+  let ml = lastBottleMl() || prof().bottle_ml_default || 150, milk = (lastFeed() && lastFeed().feed && lastFeed().feed.milk) || null;
+  const units = prof().units;
+  const presets = units === "oz" ? [2, 3, 4, 5, 6].map(x => x * OZ) : [60, 90, 120, 150, 180];
+  const body = () => kind === "bottle" ? `
+    <div class="seg" role="group" aria-label="Feed type"><button type="button" data-kind="bottle" aria-pressed="true">Bottle</button><button type="button" data-kind="breast" aria-pressed="false">Breast</button></div>
+    <div class="stepper">
+      <button type="button" class="iconbtn" id="mlDown" aria-label="Less">${icon("minus")}</button>
+      <div class="bignum num" aria-live="polite"><span id="mlVal">${esc(fmtVol(ml).split(" ")[0])}</span><small>${units}</small></div>
+      <button type="button" class="iconbtn" id="mlUp" aria-label="More">${icon("plus")}</button>
+    </div>
+    <p class="sub" style="text-align:center">Usual bottle ${esc(fmtVol(prof().bottle_ml_default))}</p>
+    <div class="presets" role="group" aria-label="Common amounts">${presets.map(v => `<button type="button" data-ml="${v}" aria-pressed="${Math.abs(v - ml) < 1}">${esc(fmtVol(v).split(" ")[0])}</button>`).join("")}</div>
+    <div class="field"><span class="lbl" id="milkLbl">Milk</span><div class="whenrow" role="group" aria-labelledby="milkLbl">${[["breastmilk", "Breast milk"], ["formula", "Formula"], ["", "Not saying"]].map(([v, l]) => `<button type="button" class="chip" data-milk="${v}" aria-pressed="${(milk || "") === v}">${l}</button>`).join("")}</div></div>
+    ${whenChips("fw")}
+    <button type="button" class="btn big feed block" id="saveFeed">${icon("check")}<span>Log <span id="mlBtn">${esc(fmtVol(ml))}</span></span></button>
+    <div class="row" style="justify-content:center;gap:16px"><button type="button" class="link" id="pumpLink">Log pumping</button><button type="button" class="link" id="spitLink">Log a spit-up</button></div>`
+  : breastBody();
+  const breastBody = () => {
+    const e = o.id ? getEvent(o.id) : null, s = e ? breastSec(e) : { l: 0, r: 0 }, rs = e && e.end_at == null ? e.feed.running_side : null;
+    return `
+    <div class="seg" role="group" aria-label="Feed type"><button type="button" data-kind="bottle" aria-pressed="false">Bottle</button><button type="button" data-kind="breast" aria-pressed="true">Breast</button></div>
+    ${e && e.end_at == null && Date.now() - e.start_at > 90 * MIN ? `<div class="banner warn">${icon("alert", "s")}<span>This feed has been running ${fmtDur(Date.now() - e.start_at)}. Forgot to stop it? Tap Done, then fix the minutes in the Log.</span></div>` : ""}
+    ${e ? `<div class="timer num" data-breast="${o.id}">${fmtClock(s.total * 1000)}</div><p class="sub" style="text-align:center">Started ${fmtTime(e.start_at)}. Tap a side to switch.</p>`
+        : `<p class="sub" style="text-align:center">Tap the side you're starting on. The timer keeps going if the phone locks.</p>`}
+    <div class="sides">
+      ${["L", "R"].map(sd => `<button type="button" class="side" data-side="${sd}" aria-pressed="${rs === sd}"><b>${sd === "L" ? "Left" : "Right"}</b><span class="num" data-side-time="${sd}">${fmtClock((sd === "L" ? s.l : s.r) * 1000)}</span><small class="sub">${rs === sd ? "Running · tap to pause" : e ? "Tap to switch here" : "Tap to start"}</small></button>`).join("")}
+    </div>
+    ${e ? `<button type="button" class="btn big feed block" id="doneBreast">${icon("check")}Done feeding</button>
+           <button type="button" class="btn ghost block" id="cancelBreast">Discard this feed</button>`
+        : `<details class="card"><summary class="h3" style="min-height:44px;display:flex;align-items:center">Already finished? Enter minutes</summary>
+             <div class="fields2" style="margin-top:10px"><div class="field"><label for="lMin">Left (min)</label><input id="lMin" type="number" inputmode="numeric" min="0" max="90"></div><div class="field"><label for="rMin">Right (min)</label><input id="rMin" type="number" inputmode="numeric" min="0" max="90"></div></div>
+             <div style="margin-top:10px">${whenChips("bw", 0)}</div>
+             <button type="button" class="btn feed block" id="saveManual" style="margin-top:10px">Log breast feed</button></details>`}`;
+  };
+  const mount = root => {
+    $$("[data-kind]", root).forEach(b => b.onclick = () => {
+      if (b.dataset.kind === kind) return;
+      const run = o.id && getEvent(o.id);
+      if (run && run.end_at == null && b.dataset.kind === "bottle") { toast("Finish or discard the breast feed first"); return; }
+      kind = b.dataset.kind; root.innerHTML = body(); mount(root);
+    });
+    if (kind === "bottle") {
+      const set = v => { ml = Math.max(0, Math.min(400, v)); $("#mlVal", root).textContent = fmtVol(ml).split(" ")[0]; $("#mlBtn", root).textContent = fmtVol(ml); $$("[data-ml]", root).forEach(b => b.setAttribute("aria-pressed", Math.abs(+b.dataset.ml - ml) < 1)); };
+      $("#mlDown", root).onclick = () => set(ml - volStep());
+      $("#mlUp", root).onclick = () => set(ml + volStep());
+      $$("[data-ml]", root).forEach(b => b.onclick = () => set(+b.dataset.ml));
+      $$("[data-milk]", root).forEach(b => b.onclick = () => { milk = b.dataset.milk || null; $$("[data-milk]", root).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+      const when = wireWhen(root, "fw");
+      $("#saveFeed", root).onclick = () => { const at = when(); closeSheet(); createEvent(baseEvent("feed", { start_at: at, feed: { kind: "bottle", ml: Math.round(ml), milk } })); };
+      $("#spitLink", root).onclick = () => { closeSheet(); setTimeout(openSpit, 220); };
+      $("#pumpLink", root).onclick = () => { closeSheet(); setTimeout(openPump, 220); };
+    } else {
+      $$("[data-side]", root).forEach(b => b.onclick = async () => {
+        const sd = b.dataset.side;
+        if (!o.id) { closeSheet(); setTimeout(() => startBreast(sd), 220); return; }
+        const e = getEvent(o.id), f = e.feed, now = Date.now();
+        const acc = breastSec(e, now);
+        const nf = Object.assign({}, f, { l_sec: acc.l, r_sec: acc.r });
+        if (f.running_side === sd) { nf.running_side = null; nf.side_started_at = null; }
+        else { nf.running_side = sd; nf.side_started_at = now; nf.last_side = sd; nf.side = (acc.l > 0 && sd === "R") || (acc.r > 0 && sd === "L") ? "both" : sd; }
+        await changeEvent(o.id, { feed: nf }); buzz();
+        root.innerHTML = body(); mount(root);
+      });
+      if (o.id) {
+        $("#doneBreast", root).onclick = () => {
+          const e = getEvent(o.id), acc = breastSec(e), now = Date.now();
+          const f = Object.assign({}, e.feed, { l_sec: Math.round(acc.l), r_sec: Math.round(acc.r), running_side: null, side_started_at: null });
+          closeSheet(); changeEvent(o.id, { feed: f, end_at: now }, { msg: `${feedLabel({ feed: f, end_at: now })} logged` });
+        };
+        $("#cancelBreast", root).onclick = () => { const before = getEvent(o.id); closeSheet(); write("events/" + o.id, null); toast("Feed discarded", [{ label: "Undo", icon: "undo", fn: () => write("events/" + o.id, before) }]); };
+      } else {
+        const when = wireWhen(root, "bw");
+        $("#saveManual", root).onclick = () => {
+          const l = +($("#lMin", root).value || 0), r = +($("#rMin", root).value || 0);
+          if (!l && !r) { toast("Enter minutes for at least one side"); $("#lMin", root).focus(); return; }
+          const end = when(), start = end - (l + r) * MIN;
+          closeSheet(); createEvent(baseEvent("feed", { start_at: start, end_at: end, source: "edit", feed: { kind: "breast", l_sec: l * 60, r_sec: r * 60, side: l && r ? "both" : l ? "L" : "R", last_side: r ? "R" : "L" } }));
+        };
+      }
+    }
+  };
+  openSheet(o.id ? "Breastfeeding" : "Log a feed", body(), mount);
+}
+function openPump() {
+  const run = runningPump();
+  let mode = (S.prefs.pumpMode) || "total", u = (S.prefs.pumpUnits) || prof().units;
+  const last = run && run.pump || {};
+  let ml = last.ml || lastPumpMl() || 90, l = last.l_ml || Math.round(ml / 2), r = last.r_ml || Math.round(ml / 2);
+  const show = v => u === "oz" ? String(Math.round((v / OZ) * 2) / 2) : String(Math.round(v));
+  const step = () => u === "oz" ? OZ / 2 : 10;
+  const total = () => mode === "lr" ? l + r : ml;
+  const stepper = (k, label, v) => `<div class="pstep"><span class="lbl">${label}</span><div class="stepper"><button type="button" class="iconbtn" data-dn="${k}" aria-label="Less ${label}">${icon("minus")}</button><div class="bignum num"><span data-v="${k}">${show(v)}</span><small>${u}</small></div><button type="button" class="iconbtn" data-up="${k}" aria-label="More ${label}">${icon("plus")}</button></div></div>`;
+  const body = () => `
+    <div class="row" style="gap:8px"><div class="seg grow" role="group" aria-label="Amount by"><button type="button" data-mode="total" aria-pressed="${mode === "total"}">Total</button><button type="button" data-mode="lr" aria-pressed="${mode === "lr"}">Left / right</button></div>
+      <div class="seg units" role="group" aria-label="Units"><button type="button" data-u="oz" aria-pressed="${u === "oz"}">oz</button><button type="button" data-u="ml" aria-pressed="${u === "ml"}">ml</button></div></div>
+    ${mode === "lr" ? `<div class="lrsteps">${stepper("l", "Left", l)}${stepper("r", "Right", r)}</div>` : stepper("t", "Amount", ml)}
+    ${run ? `<div class="timer num"><span data-since="${run.start_at}">${fmtClock(Date.now() - run.start_at)}</span></div><p class="sub" style="text-align:center">Pumping since ${fmtTime(run.start_at)}. The timer keeps going if the phone locks.</p>
+      <button type="button" class="btn big pumpbtn block" id="pDone">${icon("check")}<span>Done · log <span data-tot>${esc(show(total()))} ${u}</span></span></button>
+      <button type="button" class="btn ghost block" id="pDiscard">Discard this session</button>`
+    : `<button type="button" class="btn ghost big block" id="pStart">${icon("pump", "s")}Start pump timer</button>
+      <div class="field"><label for="pMin">How long (min, optional)</label><input id="pMin" type="number" inputmode="numeric" min="0" max="120" placeholder="15"></div>
+      ${whenChips("pw")}
+      <button type="button" class="btn big pumpbtn block" id="pSave">${icon("check")}<span>Log <span data-tot>${esc(show(total()))} ${u}</span></span></button>
+      <p class="sub small" style="text-align:center">Or type "pump 90ml 8:15", "pump L 60 R 45" or just "pump" to start the timer.</p>`}`;
+  const mount = root => {
+    const refresh = () => { $$("[data-v]", root).forEach(x => x.textContent = show({ t: ml, l, r }[x.dataset.v])); $$("[data-tot]", root).forEach(x => x.textContent = `${show(total())} ${u}`); };
+    const bump = (k, d) => { if (k === "t") ml = Math.max(0, Math.min(500, ml + d)); else if (k === "l") l = Math.max(0, Math.min(400, l + d)); else r = Math.max(0, Math.min(400, r + d)); refresh(); };
+    $$("[data-dn]", root).forEach(b => b.onclick = () => bump(b.dataset.dn, -step()));
+    $$("[data-up]", root).forEach(b => b.onclick = () => bump(b.dataset.up, step()));
+    $$("[data-mode]", root).forEach(b => b.onclick = () => { if (mode === b.dataset.mode) return; if (b.dataset.mode === "lr") { l = Math.round(ml / 2); r = ml - l; } else ml = l + r; mode = b.dataset.mode; savePrefs({ pumpMode: mode }); root.innerHTML = body(); mount(root); });
+    $$("[data-u]", root).forEach(b => b.onclick = () => { if (u === b.dataset.u) return; u = b.dataset.u; savePrefs({ pumpUnits: u }); root.innerHTML = body(); mount(root); });
+    const amounts = () => mode === "lr" ? { ml: Math.round(l + r), l_ml: Math.round(l), r_ml: Math.round(r) } : { ml: Math.round(ml), l_ml: null, r_ml: null };
+    if (run) {
+      $("#pDone", root).onclick = () => { const now = Date.now(), p = amounts(); closeSheet(); changeEvent(run.id, { end_at: now, pump: p }, { msg: `${evLabel({ type: "pump", start_at: run.start_at, end_at: now, pump: p })} logged` }); };
+      $("#pDiscard", root).onclick = () => { const before = getEvent(run.id); closeSheet(); write("events/" + run.id, null); toast("Pump session discarded", [{ label: "Undo", icon: "undo", fn: () => write("events/" + run.id, before) }]); };
+    } else {
+      const when = wireWhen(root, "pw");
+      $("#pStart", root).onclick = () => { closeSheet(); createEvent(baseEvent("pump", { start_at: Date.now(), end_at: null, pump: amounts() }), { msg: "Pump timer started" }); };
+      $("#pSave", root).onclick = () => { const end = when(), m = +($("#pMin", root).value || 0); closeSheet(); createEvent(baseEvent("pump", { start_at: end - m * MIN, end_at: end, pump: amounts() })); };
+    }
+  };
+  openSheet(run ? "Pumping" : "Log a pump session", body(), mount);
+}
+function openSpit() {
+  openSheet("Spit-up", `
+    <p class="sub">Small spit-ups after feeds are common. Log a forceful one so Cradle can remind you to call.</p>
+    <div class="actions"><button type="button" class="btn ghost big" id="spitSmall">Small spit-up</button><button type="button" class="btn danger big" id="spitBig">Forceful</button></div>
+    ${whenChips("sw")}`, root => {
+    const when = wireWhen(root, "sw");
+    const go = forceful => { const at = when(); closeSheet(); createEvent(baseEvent("spit", { start_at: at, spit: { forceful } })); };
+    $("#spitSmall", root).onclick = () => go(false); $("#spitBig", root).onclick = () => go(true);
+  });
+}
+function openDiaper() {
+  const t = totals(dayStartOf(Date.now()), Date.now() + 1);
+  openSheet("Diaper", `
+    <p class="sub">Today: ${t.pee} pee · ${t.poop} poop. One tap logs it.</p>
+    <div class="diaperbtns">
+      <button type="button" class="pee" data-d="pee" autofocus><span class="ring" style="background:var(--pee)">${icon("drop")}</span>Pee</button>
+      <button type="button" class="poop" data-d="poop"><span class="ring" style="background:var(--poop)">${icon("drop")}</span>Poop</button>
+      <button type="button" class="both" data-d="both"><span class="ring" style="background:var(--diaper)">${icon("drop")}</span>Both</button>
+    </div>
+    ${whenChips("dw")}`, root => {
+    const when = wireWhen(root, "dw");
+    $$("[data-d]", root).forEach(b => b.onclick = () => { const d = b.dataset.d; logDiaper(d !== "poop", d !== "pee", when()); });
+  });
+}
+function openSleep() {
+  const rs = runningSleep(), places = [["bassinet", "Bassinet"], ["held", "Held"], ["stroller", "Stroller"], ["car", "Car seat"]];
+  if (rs) {
+    const long = Date.now() - rs.start_at > (isNight() ? 9 : 3.5) * HR;
+    openSheet("Asleep", `
+      ${long ? `<div class="banner warn">${icon("alert", "s")}<span>This sleep has been running ${fmtDur(Date.now() - rs.start_at)}. Forgot to stop it? ${pr("Set the time he woke.")}</span></div>` : ""}
+      <div class="timer num" data-since="${rs.start_at}">${fmtClock(Date.now() - rs.start_at)}</div>
+      <p class="sub" style="text-align:center">Down at ${fmtTime(rs.start_at)}</p>
+      <div class="field"><span class="lbl" id="plLbl">Where</span><div class="whenrow" role="group" aria-labelledby="plLbl">${places.map(([v, l]) => `<button type="button" class="chip" data-place="${v}" aria-pressed="${(rs.sleep && rs.sleep.place) === v}">${l}</button>`).join("")}</div></div>
+      <div class="fields2"><div class="field"><label for="adjStart">Fell asleep at</label><input type="datetime-local" id="adjStart" value="${toLocalInput(rs.start_at)}"></div>
+      <div class="field"><label for="wokeAt">Woke at</label><input type="datetime-local" id="wokeAt" value="${toLocalInput(Date.now())}"></div></div>
+      <button type="button" class="btn big sleep block" id="up" autofocus>${icon("sun")}${pr("He's up")} now</button>
+      <button type="button" class="btn ghost block" id="upAt">Save the times above</button>`, root => {
+      $$("[data-place]", root).forEach(b => b.onclick = () => { changeEvent(rs.id, { sleep: { place: b.dataset.place } }); $$("[data-place]", root).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+      $("#up", root).onclick = () => { closeSheet(); endSleep(rs.id, Date.now()); };
+      $("#upAt", root).onclick = () => {
+        const a = fromLocalInput($("#adjStart", root).value) || rs.start_at, w = fromLocalInput($("#wokeAt", root).value);
+        if (w != null && w <= a) { toast("Wake time needs to be after the start"); return; }
+        closeSheet(); changeEvent(rs.id, { start_at: a, end_at: w }, { msg: w ? `Sleep saved · ${fmtDur(w - a)}` : "Start time changed" });
+      };
+    });
+    return;
+  }
+  openSheet("Sleep", `
+    <button type="button" class="btn big sleep block" id="startNow" autofocus>${icon("moon")}Start sleep now</button>
+    <div class="field"><span class="lbl" id="agoLbl">Fell asleep a bit ago?</span><div class="whenrow" role="group" aria-labelledby="agoLbl">${[5, 10, 15, 30].map(m => `<button type="button" class="chip" data-ago="${m}">${m} min ago</button>`).join("")}</div></div>
+    <details class="card"><summary class="h3" style="min-height:44px;display:flex;align-items:center">Add a sleep that already ended</summary>
+      <div class="fields2" style="margin-top:10px"><div class="field"><label for="pS">Fell asleep</label><input type="datetime-local" id="pS" value="${toLocalInput(Date.now() - HR)}"></div><div class="field"><label for="pE">Woke</label><input type="datetime-local" id="pE" value="${toLocalInput(Date.now())}"></div></div>
+      <button type="button" class="btn sleep block" id="savePast" style="margin-top:10px">Save sleep</button></details>`, root => {
+    const start = at => { closeSheet(); createEvent(baseEvent("sleep", { start_at: at, sleep: { place: prof().sleep_place } }), { msg: `Sleep started · ${fmtTime(at)}` }); };
+    $("#startNow", root).onclick = () => start(Date.now());
+    $$("[data-ago]", root).forEach(b => b.onclick = () => start(Date.now() - b.dataset.ago * MIN));
+    $("#savePast", root).onclick = () => {
+      const a = fromLocalInput($("#pS", root).value), b = fromLocalInput($("#pE", root).value);
+      if (!a || !b || b <= a) { toast("Wake time needs to be after the start"); return; }
+      closeSheet(); createEvent(baseEvent("sleep", { start_at: a, end_at: b, source: "edit", sleep: { place: prof().sleep_place } }), { msg: `Sleep saved · ${fmtDur(b - a)}` });
+    };
+  });
+}
+
+/* Edit any entry. Every field stays editable; delete is soft with Undo. */
+function openEdit(id) {
+  const e = getEvent(id); if (!e) return;
+  const isB = e.type === "feed" && e.feed && e.feed.kind === "breast";
+  const typeFields = e.type === "feed" ? (isB ? `
+      <div class="fields2"><div class="field"><label for="eL">Left (min)</label><input id="eL" type="number" inputmode="numeric" min="0" value="${Math.round((e.feed.l_sec || 0) / 60)}"></div><div class="field"><label for="eR">Right (min)</label><input id="eR" type="number" inputmode="numeric" min="0" value="${Math.round((e.feed.r_sec || 0) / 60)}"></div></div>`
+    : `<div class="fields2"><div class="field"><label for="eMl">Amount (${prof().units})</label><input id="eMl" type="number" inputmode="decimal" min="0" step="${prof().units === "oz" ? 0.5 : 5}" value="${prof().units === "oz" ? Math.round((e.feed.ml / OZ) * 2) / 2 : e.feed.ml}"></div>
+       <div class="field"><label for="eMilk">Milk</label><select id="eMilk"><option value="">Not saying</option><option value="breastmilk" ${e.feed.milk === "breastmilk" ? "selected" : ""}>Breast milk</option><option value="formula" ${e.feed.milk === "formula" ? "selected" : ""}>Formula</option></select></div></div>`)
+    : e.type === "diaper" ? `<div class="seg dark" role="group" aria-label="Diaper">${[["pee", "Pee"], ["poop", "Poop"], ["both", "Both"]].map(([v, l]) => `<button type="button" data-dv="${v}" aria-pressed="${(v === "both" && e.diaper.pee && e.diaper.poop) || (v === "pee" && e.diaper.pee && !e.diaper.poop) || (v === "poop" && e.diaper.poop && !e.diaper.pee)}">${l}</button>`).join("")}</div>`
+    : e.type === "pump" ? `<div class="fields2"><div class="field"><label for="ePl">Left (${prof().units})</label><input id="ePl" type="number" inputmode="decimal" min="0" value="${e.pump && e.pump.l_ml != null ? (prof().units === "oz" ? Math.round(e.pump.l_ml / OZ * 2) / 2 : e.pump.l_ml) : ""}"></div><div class="field"><label for="ePr">Right (${prof().units})</label><input id="ePr" type="number" inputmode="decimal" min="0" value="${e.pump && e.pump.r_ml != null ? (prof().units === "oz" ? Math.round(e.pump.r_ml / OZ * 2) / 2 : e.pump.r_ml) : ""}"></div></div>
+       <div class="field"><label for="ePt">Total (${prof().units}) · used when left and right are empty</label><input id="ePt" type="number" inputmode="decimal" min="0" value="${e.pump && e.pump.ml != null ? (prof().units === "oz" ? Math.round(e.pump.ml / OZ * 2) / 2 : e.pump.ml) : ""}"></div>`
+    : e.type === "spit" ? `<label class="field" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" id="eForce" ${e.spit && e.spit.forceful ? "checked" : ""} style="width:24px;height:24px"> Forceful or projectile</label>` : "";
+  const hasEnd = e.type === "sleep" || e.type === "pump" || isB;
+  const who = e.logged_by ? personName(e.logged_by) : "";
+  openSheet(`Edit ${e.type === "spit" ? "spit-up" : e.type === "pump" ? "pumping" : e.type}`, `
+    ${typeFields}
+    <div class="${hasEnd ? "fields2" : ""}"><div class="field"><label for="eS">${e.type === "sleep" ? "Fell asleep" : "Time"}</label><input type="datetime-local" id="eS" value="${toLocalInput(e.start_at)}"></div>
+    ${hasEnd ? `<div class="field"><label for="eE">${e.type === "sleep" ? "Woke" : "Finished"}</label><input type="datetime-local" id="eE" value="${e.end_at ? toLocalInput(e.end_at) : ""}"></div>` : ""}</div>
+    <div class="field"><label for="eNote">Note</label><textarea id="eNote" rows="2" placeholder="${pr("Color, rash, how he seemed…")}">${esc(e.note || (e.diaper && e.diaper.note) || "")}</textarea></div>
+    <p class="sub small">${who ? `Logged by ${esc(who)}` : "Logged"} · ${e.source === "text" ? `typed "${esc(e.raw_text || "")}"` : e.source === "edit" ? "added by hand" : "one tap"}${e.updated_by && e.updated_at !== e.created_at ? ` · edited ${fmtTime(e.updated_at)}` : ""}</p>
+    <button type="button" class="btn big feed block" id="eSave" style="background:var(--btn);color:var(--btn-ink)">Save changes</button>
+    <button type="button" class="btn quiet block" id="eDel">${icon("trash", "s")}Delete entry</button>`, root => {
+    let dv = e.type === "diaper" ? (e.diaper.pee && e.diaper.poop ? "both" : e.diaper.poop ? "poop" : "pee") : null;
+    $$("[data-dv]", root).forEach(b => b.onclick = () => { dv = b.dataset.dv; $$("[data-dv]", root).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+    $("#eSave", root).onclick = () => {
+      const s = fromLocalInput($("#eS", root).value); if (!s) { toast("Pick a valid time"); return; }
+      const patch = { start_at: s, note: $("#eNote", root).value.trim() || null };
+      if (hasEnd) { const en = $("#eE", root).value ? fromLocalInput($("#eE", root).value) : null; if (en != null && en <= s) { toast("The end needs to be after the start"); return; } patch.end_at = en; }
+      if (e.type === "feed" && !isB) { const v = +$("#eMl", root).value; patch.feed = Object.assign({}, e.feed, { ml: Math.round(prof().units === "oz" ? v * OZ : v), milk: $("#eMilk", root).value || null }); }
+      if (isB) { const l = +$("#eL", root).value || 0, r = +$("#eR", root).value || 0; patch.feed = Object.assign({}, e.feed, { l_sec: l * 60, r_sec: r * 60, side: l && r ? "both" : r ? "R" : "L", running_side: patch.end_at ? null : e.feed.running_side }); }
+      if (e.type === "diaper") patch.diaper = { pee: dv !== "poop", poop: dv !== "pee" };
+      if (e.type === "spit") patch.spit = { forceful: $("#eForce", root).checked };
+      if (e.type === "pump") { const toMl = v => v === "" ? null : Math.round(prof().units === "oz" ? +v * OZ : +v); const pl = toMl($("#ePl", root).value), prr = toMl($("#ePr", root).value), pt = toMl($("#ePt", root).value); patch.pump = pl != null || prr != null ? { l_ml: pl || 0, r_ml: prr || 0, ml: (pl || 0) + (prr || 0) } : { ml: pt, l_ml: null, r_ml: null }; }
+      closeSheet(); changeEvent(id, patch, { msg: "Saved" });
+    };
+    $("#eDel", root).onclick = () => { closeSheet(); changeEvent(id, { deleted: true }, { msg: `${evLabel(e)} deleted` }); };
+  });
+}
+function openAddPast() {
+  openSheet("Add a past entry", `
+    <p class="sub">Pick what to add. You can set the time on the next screen.</p>
+    <div class="list">
+      ${[["feed", "Bottle feed", "bottle"], ["breast", "Breast feed", "bottle"], ["sleep", "Sleep", "moon"], ["diaper", "Diaper", "drop"], ["pump", "Pumping", "pump"], ["spit", "Spit-up", "spit"]].map(([v, l, i]) => `<button type="button" class="li" data-add="${v}"><span class="badge b-${v === "breast" ? "feed" : v}">${icon(i)}</span><span class="grow h3">${l}</span>${icon("chevron", "s")}</button>`).join("")}
+    </div>`, root => {
+    $$("[data-add]", root).forEach(b => b.onclick = () => {
+      const v = b.dataset.add; closeSheet();
+      setTimeout(() => v === "feed" ? openFeed({ kind: "bottle" }) : v === "breast" ? openFeed({ kind: "breast" }) : v === "sleep" ? openSleep() : v === "diaper" ? openDiaper() : v === "pump" ? openPump() : openSpit(), 220);
+    });
+  });
+}
+
+/* ---------- type or say ---------- */
+async function submitText(text) {
+  text = (text || "").trim(); if (!text) return;
+  const input = $("#say"); const send = $("#sayBtn");
+  const parsed = parseShorthand(text);
+  let entries = parsed.entries, unclear = parsed.unclear;
+  if (unclear.length && B.sample && !S.demo) {
+    send.setAttribute("aria-busy", "true");
+    try {
+      const res = await B.sample.json(claudeParsePrompt(unclear.join(", ")), { modelTier: "quick" });
+      const more = fromClaude(res);
+      entries = entries.concat(more.entries); unclear = more.unclear;
+    } catch (e) { if (e && e.code === "rate_limited") toast("Claude is busy. Try again in a minute."); }
+    finally { send.removeAttribute("aria-busy"); }
+  }
+  if (!entries.length) { toast(`Couldn't read "${unclear.join(", ")}". Try "fed 120ml 8:15", "pee", "down 1:30" or "up 2:45".`, [], { ms: 9000 }); return; }
+  input.value = ""; ls.del("cradle.draft");
+  const created = [], before = [];
+  for (const x of entries) {
+    if (x.type === "wake") {
+      const tgt = x.target.id ? x.target : null;
+      if (tgt) { before.push([tgt.id, getEvent(tgt.id)]); await changeEvent(tgt.id, { end_at: x.end_at }); }
+      else { const id = newId(); x.target.end_at = x.end_at; created.push(id); await write("events/" + id, baseEvent("sleep", Object.assign({}, x.target, { source: "text", raw_text: text }))); }
+      continue;
+    }
+    if (x.type === "pumpdone") { before.push([x.target.id, getEvent(x.target.id)]); await changeEvent(x.target.id, { end_at: x.end_at, pump: x.pump.ml != null ? x.pump : (x.target.pump || {}) }); continue; }
+    if (x.type === "sleep" && entries.some(y => y.type === "wake" && y.target === x)) continue;
+    const id = newId(); created.push(id);
+    await write("events/" + id, baseEvent(x.type, Object.assign({}, x, { source: "text", raw_text: text })));
+  }
+  buzz();
+  const labels = entries.map(x => x.type === "wake" ? `Up ${fmtTime(x.end_at)}` : x.type === "pumpdone" ? `Pump done${x.pump.ml != null ? " " + fmtVol(x.pump.ml) : ""}` : x.type === "pump" && x.end_at == null ? "Pump timer started" : `${evLabel(x)} ${fmtTime(x.start_at)}`);
+  toast(`Logged: ${labels.join(" · ")}${unclear.length ? `. Skipped "${unclear.join(", ")}"` : ""}`, [
+    created.length === 1 ? { label: "Edit", icon: "edit", fn: () => openEdit(created[0]) } : null,
+    { label: "Undo", icon: "undo", fn: () => { created.forEach(id => write("events/" + id, null)); before.forEach(([id, e]) => write("events/" + id, e)); toast("Removed"); } },
+  ].filter(Boolean), { ms: 8000 });
+}
+function claudeParsePrompt(text) {
+  const now = new Date();
+  return `You turn a tired parent's shorthand baby log into JSON. Local time now: ${now.toString()}.
+Baby feeds by ${prof().feeding}; usual bottle ${prof().bottle_ml_default} ml. Units shown to parent: ${prof().units}.
+Text: """${text}"""
+Return ONLY JSON: {"entries":[{"type":"feed|pump|diaper|sleep|wake|spit|note","time":"HH:MM 24h or null for now","end":"HH:MM or null","kind":"bottle|breast","ml":number|null,"left_min":number|null,"right_min":number|null,"pee":bool,"poop":bool,"forceful":bool,"pump_minutes":number|null,"left_ml":number|null,"right_ml":number|null,"note":string|null}],"unclear":[strings you could not read]}
+"pump" is the parent pumping breast milk: ml is the amount pumped (convert oz to ml at 29.57), left_ml/right_ml if given per side. "wake" means the baby woke up (ends the current sleep). Never invent amounts the text doesn't give; leave ml null. Times are the most recent past occurrence.`;
+}
+function fromClaude(res) {
+  const out = { entries: [], unclear: [] };
+  if (!res || !Array.isArray(res.entries)) return { entries: [], unclear: ["(unreadable)"] };
+  const at = s => { if (!s) return Date.now(); const m = String(s).match(/(\d{1,2}):(\d{2})/); return m ? resolveClock(+m[1], +m[2], null, Date.now()) ?? Date.now() : Date.now(); };
+  const at24 = s => { if (!s) return Date.now(); const m = String(s).match(/(\d{1,2}):(\d{2})/); if (!m) return Date.now(); const d = new Date(); d.setHours(+m[1], +m[2], 0, 0); if (d.getTime() > Date.now() + 15 * MIN) d.setDate(d.getDate() - 1); return d.getTime(); };
+  for (const x of res.entries) {
+    const t = at24(x.time);
+    if (x.type === "feed") {
+      if (x.kind === "breast") { const l = +x.left_min || 0, r = +x.right_min || 0, tot = (l + r || 15) * MIN; out.entries.push({ type: "feed", start_at: t - (x.time ? 0 : tot), end_at: t - (x.time ? 0 : tot) + tot, feed: { kind: "breast", l_sec: l * 60, r_sec: r * 60, side: l && r ? "both" : r ? "R" : "L" } }); }
+      else out.entries.push({ type: "feed", start_at: t, end_at: null, feed: { kind: "bottle", ml: Math.round(+x.ml || lastBottleMl() || prof().bottle_ml_default), milk: null } });
+    } else if (x.type === "diaper") out.entries.push({ type: "diaper", start_at: t, diaper: { pee: !!x.pee || !x.poop, poop: !!x.poop } });
+    else if (x.type === "sleep") out.entries.push({ type: "sleep", start_at: t, end_at: x.end ? at24(x.end) : null });
+    else if (x.type === "wake") { const rs = runningSleep(); if (rs) out.entries.push({ type: "wake", end_at: t, target: rs }); else out.unclear.push("up"); }
+    else if (x.type === "pump") { const l = x.left_ml != null ? Math.round(+x.left_ml) : null, r = x.right_ml != null ? Math.round(+x.right_ml) : null, m = +x.pump_minutes || 0; out.entries.push({ type: "pump", start_at: t - m * MIN, end_at: t, pump: { ml: l != null || r != null ? (l || 0) + (r || 0) : x.ml != null ? Math.round(+x.ml) : null, l_ml: l, r_ml: r } }); }
+    else if (x.type === "spit") out.entries.push({ type: "spit", start_at: t, spit: { forceful: !!x.forceful } });
+    else if (x.type === "note" && x.note) out.entries.push({ type: "note", start_at: t, note: String(x.note).slice(0, 500) });
+  }
+  out.unclear = out.unclear.concat(Array.isArray(res.unclear) ? res.unclear.map(String) : []);
+  return out;
+}
+
+/* ---------- day summary text, CSV ---------- */
+function daySummaryText(ds) {
+  const st = dayStats(ds), p = prof(), lines = [];
+  lines.push(`${p.name || "Baby"} · ${fmtDay(ds)} (${fmtTime(ds)} to ${fmtTime(st.de)})`);
+  lines.push(`Fed: ${st.feeds.length} feeds${st.ml ? `, ${fmtVol(st.ml)} by bottle` : ""}${st.breastMin ? `, ${Math.round(st.breastMin)} min breast` : ""}`);
+  lines.push(`Diapers: ${st.pee} pee, ${st.poop} poop`);
+  lines.push(`Day sleep: ${fmtDur(st.daySleep)} over ${st.naps} naps`);
+  if (st.longestNight) lines.push(`Night: longest stretch ${fmtDur(st.longestNight)}, ${st.nightWakings} wakings, ${st.nightFeeds.length} night feeds`);
+  lines.push("");
+  for (const e of st.events) lines.push(`${fmtTime(e.start_at)}  ${evLabel(e)}${e.note ? ` (${e.note})` : ""}`);
+  return lines.join("\n");
+}
+function csv() {
+  const rows = [["date", "start", "end", "type", "detail", "ml", "left_min", "right_min", "pee", "poop", "note", "logged_by", "source"]];
+  for (const e of evs()) rows.push([
+    new Date(e.start_at).toISOString().slice(0, 10), new Date(e.start_at).toISOString(), e.end_at ? new Date(e.end_at).toISOString() : "", e.type, evLabel(e),
+    e.feed && e.feed.ml || e.pump && e.pump.ml || "", e.feed && e.feed.l_sec ? Math.round(e.feed.l_sec / 60) : "", e.feed && e.feed.r_sec ? Math.round(e.feed.r_sec / 60) : "",
+    e.diaper ? +!!e.diaper.pee : "", e.diaper ? +!!e.diaper.poop : "", e.note || "", personName(e.logged_by), e.source || "",
+  ]);
+  return rows.map(r => r.map(v => { v = String(v); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; }).join(",")).join("\n");
+}
+async function copyText(text, label = "Copied") {
+  try { await navigator.clipboard.writeText(text); toast(label); }
+  catch { openSheet("Copy this", `<div class="field"><label for="cp">Select all and copy</label><textarea id="cp" rows="12" readonly>${esc(text)}</textarea></div>`, r => { const t = $("#cp", r); t.focus(); t.select(); }); }
+}
+async function exportCsv() {
+  const data = csv(), name = `cradle-${(prof().name || "baby").toLowerCase()}-${toDateInput(Date.now())}.csv`;
+  if (B.downloads) {
+    try { await B.downloads.save({ filename: name, data }); toast("Saved " + name); return; }
+    catch (e) { if (e && e.code === "declined") return; }
+  }
+  copyText(data, "CSV copied");
+}
+
+/* ---------- renderers ---------- */
+function render() {
+  applyChrome(); applyPronouns();
+  const v = $("#view");
+  const hash = (location.hash || "#today").slice(1);
+  S.route = ["today", "log", "plan", "me"].includes(hash) ? hash : "today";
+  const needsSetup = S.ready && !S.demo && !S.profile;
+  renderTabs(needsSetup);
+  if (!S.ready && !S.demo) { v.innerHTML = viewLoading(); renderDock(false); updateSync(); return; }
+  if (needsSetup) { if (!v.dataset.onboard) { v.dataset.onboard = "1"; v.innerHTML = viewOnboard(); wireOnboard(v); } renderDock(false); return; }
+  delete v.dataset.onboard;
+  const scroll = v.scrollTop, same = v.dataset.route === S.route;
+  v.dataset.route = S.route;
+  v.innerHTML = { today: viewToday, log: viewLog, plan: viewPlan, me: viewMe }[S.route]();
+  wireView(v);
+  renderDock(S.route === "today");
+  if (same) v.scrollTop = scroll; else v.scrollTop = 0;
+  updateSync();
+  if (S.ready && !S.prefs.seenIntro && S.profile && !sheetOpen() && !S.demo) openIntro();
+}
+function renderTabs(hide) {
+  const t = $("#tabs");
+  t.hidden = hide;
+  const items = [["today", "Today", "home"], ["log", "Log", "list"], ["plan", "Plan", "sun"], ["me", "Me", "user"]];
+  t.innerHTML = items.map(([k, l, i]) => `<a class="tab" href="#${k}" ${S.route === k ? 'aria-current="page"' : ""}><span class="tabic">${icon(i)}</span>${l}</a>`).join("");
+}
+function renderDock(show) {
+  const dock = $("#dock");
+  dock.hidden = !show;
+  if (!show) { document.documentElement.style.setProperty("--dock-h", "0px"); return; }
+  if (!dock.dataset.built) {
+    dock.dataset.built = "1";
+    dock.innerHTML = `
+      <button type="button" class="dockgrip" id="dockGrip"><i aria-hidden="true"></i><span></span></button>
+      <form class="typebox" id="sayForm" autocomplete="off"><label for="say" class="sr">Type or say an entry</label>
+        <input id="say" enterkeyhint="send" placeholder='Type or say: "fed 120ml 8:15"' value="${esc(ls.get("cradle.draft", ""))}">
+        <button class="sendbtn" id="sayBtn" type="submit" aria-label="Log it">${icon("send")}</button></form>
+      <div class="chiprow"><button type="button" class="swap" id="handSwap">${icon("hand")}<b></b></button>
+      <div class="chips" role="group" aria-label="Shortcuts">${[["fed ", "fed"], ["pee", "pee"], ["poop", "poop"], ["down ", "down"], ["up ", "up"], ["bf L ", "breast L"], ["bf R ", "breast R"], ["pump", "pump"]].map(([c, l]) => `<button type="button" class="chip" data-chip="${c}">${l}</button>`).join("")}</div></div>
+      <div class="tiles" id="tiles"></div>`;
+    $("#dockGrip").onclick = () => { savePrefs({ dock: S.prefs.dock === "min" ? "full" : "min" }); buzz(); };
+    let y0 = null; const grip = $("#dockGrip");
+    grip.addEventListener("touchstart", e => { y0 = e.touches[0].clientY; }, { passive: true });
+    grip.addEventListener("touchend", e => { if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null;
+      if (Math.abs(dy) > 24) { e.preventDefault(); const v = dy > 0 ? "min" : "full"; if (v !== S.prefs.dock) { savePrefs({ dock: v }); buzz(); } } });
+    $("#handSwap").onclick = () => { const v = S.prefs.hand === "left" ? "right" : "left"; savePrefs({ hand: v }); buzz(); toast(v === "left" ? "Left hand. Tap the hand again to switch back." : "Right hand. Tap the hand again to switch back."); };
+    applyChrome();
+    $("#sayForm").onsubmit = ev => { ev.preventDefault(); submitText($("#say").value); };
+    $("#say").oninput = ev => ls.set("cradle.draft", ev.target.value);
+    $$("[data-chip]", dock).forEach(b => b.onclick = () => {
+      const c = b.dataset.chip;
+      if (c === "pee" || c === "poop") { submitText(c); return; }
+      if (c === "pump") { openPump(); return; }
+      const i = $("#say"); i.value = c; i.focus();
+    });
+  }
+  const mini = S.prefs.dock === "min";
+  dock.classList.toggle("mini", mini);
+  const grip = $("#dockGrip"); grip.setAttribute("aria-expanded", String(!mini));
+  grip.setAttribute("aria-label", mini ? "Show the type box and big buttons" : "Shrink the buttons to see more of the day");
+  grip.querySelector("span").textContent = mini ? "More" : "Less";
+  const now = Date.now(), rs = runningSleep(), rb = runningBreast(), lf = lastFeed();
+  const lastDiaper = evs().filter(e => e.type === "diaper").pop();
+  const lastWake = sleeps().filter(e => e.end_at).pop();
+  $("#tiles").innerHTML = `
+    <div class="tilewrap w-feed"><button type="button" class="tile feed ${rb ? "running" : ""}" id="tFeed" aria-label="${rb ? "Breastfeeding in progress. Open timer" : "Log a feed with one tap"}">
+      <span class="ring">${icon("bottle")}</span><b>Feed</b><span class="num">${rb ? `<span data-since="${rb.start_at}">${fmtClock(now - rb.start_at)}</span>` : lf ? fmtTime(lf.start_at) : "One tap"}</span></button>
+      <button type="button" class="more" id="tFeedMore" aria-label="Feed options">${icon("more", "s")}</button></div>
+    <div class="tilewrap w-sleep"><button type="button" class="tile sleep ${rs ? "running" : ""}" id="tSleep" aria-label="${rs ? "Asleep. Tap at wake-up" : "Start a sleep"}">
+      <span class="ring">${icon(rs ? "sun" : "moon")}</span><b>${rs ? pr("He's up") : "Sleep"}</b><span class="num">${rs ? `Asleep <span data-since="${rs.start_at}" data-fmt="dur">${fmtDur(now - rs.start_at)}</span>` : lastWake ? `Awake <span data-since="${lastWake.end_at}" data-fmt="dur">${fmtDur(now - lastWake.end_at)}</span>` : "Start timer"}</span></button>
+      <button type="button" class="more" id="tSleepMore" aria-label="Sleep options">${icon("more", "s")}</button></div>
+    <div class="tilewrap w-diaper"><button type="button" class="tile diaper" id="tDiaper" aria-label="Log a diaper">
+      <span class="ring">${icon("diaper")}</span><b>Diaper</b><span class="num">${lastDiaper ? fmtTime(lastDiaper.start_at) : "Pee or poop"}</span></button></div>`;
+  $("#tFeed").onclick = quickFeed; $("#tFeedMore").onclick = () => openFeed(rb ? { id: rb.id } : {});
+  $("#tSleep").onclick = quickSleep; $("#tSleepMore").onclick = openSleep;
+  $("#tDiaper").onclick = openDiaper;
+  document.documentElement.style.setProperty("--dock-h", dock.offsetHeight + "px");
+}
+function viewLoading() {
+  return `<div class="topbar"><div class="grow"><span class="eyebrow">Cradle</span><h1 class="h1">Opening the log…</h1></div>${syncPill()}</div>
+  ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. Check your connection. Anything you log is kept on this phone and synced later.</span></div>` : ""}
+  <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
+}
+const APP_VERSION = "1.0.0";
+const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
+const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
+let latest = null;
+const newer = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+function checkUpdate() {
+  try { fetch(UPDATE_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.version && newer(v.version, APP_VERSION)) { latest = v; scheduleRender(); } }).catch(() => {}); } catch {}
+}
+function banners() {
+  let h = "";
+  if (latest && ls.get("cradle.update", "") !== latest.version) h += `<div class="banner info" style="flex-wrap:wrap">${icon("download", "s")}<span class="grow"><b>Cradle ${esc(latest.version)} is out.</b> ${esc(latest.notes || "")} Paste the update line into Claude Code. Your log stays put.</span><button type="button" class="link" data-act="upd-copy">Copy update line</button><button type="button" class="link" data-act="upd-later">Later</button></div>`;
+  const rp = runningPump();
+  if (rp) h += `<div class="banner pumping">${icon("pump", "s")}<span class="grow">Pumping <b class="num" data-since="${rp.start_at}">${fmtClock(Date.now() - rp.start_at)}</b></span><button type="button" class="link" data-act="pump">Finish</button></div>`;
+  if (S.demo) h += `<div class="banner demo">${icon("info", "s")}<span class="grow">Sample day. Nothing here is saved. </span><button type="button" class="link" data-act="demo-off">Turn off</button></div>`;
+  else if (S.backend === "local") h += `<div class="banner info">${icon("info", "s")}<span>Saved on this phone only. Open Cradle from claude.ai to share the log with your partner.</span></div>`;
+  return h;
+}
+
+function viewToday() {
+  const now = Date.now(), p = prof(), ph = planDoc().phase, ds = dayStartOf(now), bed = bedOf(ds), night = now >= bed;
+  const rs = runningSleep(), lf = lastFeed(), lastWake = sleeps().filter(e => e.end_at).pop();
+  const t = totals(ds, nextDayStart(ds), now);
+  const nf = nextFeed(now), flags = healthFlags(now);
+  const name = p.name || "Baby";
+  let hero;
+  if (rs) hero = `<span class="eyebrow" style="color:var(--sleep-ink)">Asleep</span><div class="big num" data-since="${rs.start_at}" data-fmt="dur">${fmtDur(now - rs.start_at)}</div><p class="sub">Down at ${fmtTime(rs.start_at)}${rs.sleep && rs.sleep.place ? ` · ${esc(rs.sleep.place)}` : ""}</p>`;
+  else if (lastWake) hero = `<span class="eyebrow" style="color:var(--sleep-ink)">Awake</span><div class="big num" data-since="${lastWake.end_at}" data-fmt="dur">${fmtDur(now - lastWake.end_at)}</div><p class="sub">${lf ? `Last fed ${fmtTime(lf.start_at)} · ${esc(feedLabel(lf, true))}` : "No feeds yet"}</p>`;
+  else if (lf) hero = `<span class="eyebrow" style="color:var(--feed-ink)">Since last feed</span><div class="big num" data-since="${lf.start_at}" data-fmt="dur">${fmtDur(now - lf.start_at)}</div><p class="sub">${lf ? `Last fed ${fmtTime(lf.start_at)} · ${esc(feedLabel(lf, true))}` : "No feeds yet"}</p>`;
+  else hero = `<span class="eyebrow">Today</span><div class="h2">Nothing logged yet</div><p class="sub">Tap Feed, Sleep or Diaper below. One tap logs it, and Undo is always there.</p>`;
+  let next = "";
+  if (nf) {
+    if (nf.night) next = `<p class="small">${esc(nf.text)}</p>`;
+    else {
+      const frac = lf && nf.at > lf.start_at ? Math.min(1, (now - lf.start_at) / (nf.at - lf.start_at)) : 0;
+      next = `<div class="meter" role="img" aria-label="Time toward next feed"><i style="width:${Math.round(frac * 100)}%;background:var(--feed)"></i></div>
+        <p class="small">Next feed around <b>${fmtTime(nf.at)}</b> · ${esc(nf.text)}${nf.src === "book" ? ' <span class="tag book">Book</span>' : ""}</p>`;
+    }
+  }
+  const phase = PHASES[ph - 1];
+  const tip = night ? (ph <= 2 ? ["book", pr("Don't hold back night feeds yet. If he's hungry, feed him.")] : ["book", "Fade one night feed at a time. A hungry, crying baby still gets fed."]) : [phase.book[0] ? "book" : "tip", `${phase.book[1] ? phase.book[1][0] : phase.book[0][0]}. ${phase.book[1] ? phase.book[1][1] : phase.book[0][1]}`];
+  const tonight = night ? nightLog(bed, now) : "";
+  return `
+  <div class="topbar"><div class="grow"><span class="eyebrow">${fmtDay(now)} · Phase ${ph}</span><h1 class="h1">${esc(name)}${p.birth_date ? ` · ${esc(ageStr(now).replace(/ \d+ days?$/, ""))}` : ""}</h1></div>${syncPill()}</div>
+  <div class="stack">
+    ${banners()}${setupCard()}
+    ${flags.map(flagCard).join("")}
+    <div class="card hero">${hero}${next}</div>
+    <div class="stats">
+      <button type="button" class="stat feed" data-go="log"><b class="num">${t.ml ? fmtVol(t.ml) : t.feeds}</b><span>${t.ml ? `fed · ${t.feeds} feed${t.feeds === 1 ? "" : "s"}` : `feed${t.feeds === 1 ? "" : "s"} today`}${t.breastMin ? ` · ${Math.round(t.breastMin)}m breast` : ""}</span></button>
+      <button type="button" class="stat diaper" data-go="log"><b class="num">${t.pee} · ${t.poop}</b><span>pee · poop</span></button>
+      <button type="button" class="stat sleep" data-go="log"><b class="num">${fmtDur(overlapSleep(ds, Math.min(bed, now), now))}</b><span>day sleep · ${t.naps} naps</span></button>
+    </div>
+    ${tonight}
+    <div class="card advice"><div class="row"><span class="tag ${tip[0]}">${tip[0] === "book" ? "From the book" : "Cradle tip"}</span><span class="tag claude" style="background:none;padding:0">Phase ${ph} · ${esc(phase.name)}</span></div><p>${esc(tip[1])}</p></div>
+    ${!flags.filter(f => !f.soft).length && evs().length > 8 ? `<div class="okline">${icon("check", "s")}<span>Nothing to flag. Diapers and feeds look on track.</span></div>` : ""}
+    ${todayTimeline(ds, now)}
+  </div>`;
+}
+function overlapSleep(a, b, now) { return sleeps().reduce((s, e) => s + overlap(e.start_at, e.end_at ?? now, a, b), 0); }
+function nightLog(bed, now) {
+  const list = evs().filter(e => (e.start_at >= bed - 30 * MIN) || (e.type === "sleep" && (e.end_at ?? now) > bed));
+  const st = list.filter(e => e.type === "sleep").map(e => ({ s: Math.max(e.start_at, bed - 3 * HR), e: e.end_at ?? now }));
+  const longest = st.length ? Math.max(...st.map(x => x.e - x.s)) : 0;
+  const fs = list.filter(e => e.type === "feed" && e.start_at >= bed);
+  return `<div class="card"><div class="row" style="margin-bottom:6px"><h2 class="h3 grow">Tonight</h2><span class="sub small">${fs.length} feeds · longest stretch ${fmtDur(longest)}</span></div>
+  <div class="timeline">${list.length ? list.slice(-8).map(tlRow).join("") : `<p class="sub">Nothing since bedtime.</p>`}</div></div>`;
+}
+function tlRow(e) {
+  const detail = e.type === "sleep" ? (e.end_at ? `${fmtTime(e.start_at)} to ${fmtTime(e.end_at)}` : "Still asleep") : e.note || "";
+  return `<button type="button" class="tl" data-edit="${e.id}"><span class="t num">${fmtTime(e.start_at)}</span><span class="dot d-${e.type}"></span><span class="grow"><b style="font-weight:500">${esc(evLabel(e))}</b>${detail ? `<br><span class="sub small">${esc(detail)}</span>` : ""}</span>${whoDot(e.logged_by)}</button>`;
+}
+function todayTimeline(ds, now) {
+  const list = evs().filter(e => e.start_at >= ds).slice(-6).reverse();
+  if (!list.length) return "";
+  return `<div class="card"><div class="row"><h2 class="h3 grow">Latest</h2><a class="link" href="#log">See all</a></div><div class="timeline">${list.map(tlRow).join("")}</div></div>`;
+}
+function flagCard(f) {
+  const ped = prof().pediatrician;
+  return `<div class="flag" role="alert"><div class="row"><span class="ico">${icon("alert")}</span><span class="tag" style="background:var(--card);color:var(--danger-ink)">Health check</span></div>
+  <h3>${esc(f.title)}</h3><p>${esc(f.body)}</p>
+  ${f.soft ? "" : `<button type="button" class="btn danger block" data-act="call">${icon("phone")}Call ${ped.name ? esc(ped.name) : "your pediatrician"}</button>`}
+  <div class="actions">${f.act ? `<button type="button" class="btn ghost" data-act="${f.act}">${esc(f.actLabel)}</button>` : ""}<button type="button" class="btn ghost" data-dismiss="${f.id}">Dismiss for today</button></div>
+  <p class="small sub">Cradle isn't a doctor. You make the call, and a hungry, crying baby always gets fed.</p></div>`;
+}
+
+function viewLog() {
+  const now = Date.now(), today = dayStartOf(now);
+  if (S.logDay == null || S.logDay > today) S.logDay = today;
+  const ds = S.logDay, st = dayStats(ds);
+  const days = Array.from({ length: 14 }, (_, i) => shiftDay(today, i - 13));
+  const f = S.logFilter;
+  const list = st.events.filter(e => f === "all" || (f === "feed" && (e.type === "feed" || e.type === "pump")) || (f === "sleep" && e.type === "sleep") || (f === "diaper" && (e.type === "diaper" || e.type === "spit"))).slice().reverse();
+  return `
+  <div class="topbar"><div class="grow"><span class="eyebrow">Day starts ${esc(fmtTime(new Date().setHours(...prof().day_start.split(":").map(Number))))}</span><h1 class="h1">Log</h1></div>
+    <button type="button" class="iconbtn" data-act="addpast" aria-label="Add a past entry">${icon("plus")}</button></div>
+  <div class="stack">
+    ${banners()}
+    <div class="days" role="group" aria-label="Pick a day" id="daysRow">${days.map(d => `<button type="button" class="daybtn" data-day="${d}" aria-pressed="${d === ds}"><span>${new Date(d).toLocaleDateString([], { weekday: "short" })}</span><b class="num">${new Date(d).getDate()}</b></button>`).join("")}</div>
+    <div class="stats">
+      <div class="stat feed"><b class="num">${st.ml ? fmtVol(st.ml) : st.feeds.length}</b><span>${st.ml ? "by bottle" : "feeds"} · ${st.feeds.length} feeds</span></div>
+      <div class="stat diaper"><b class="num">${st.pee} · ${st.poop}</b><span>pee · poop</span></div>
+      <div class="stat sleep"><b class="num">${fmtDur(st.daySleep)}</b><span>day sleep · ${st.naps} naps</span></div>
+    </div>
+    ${(() => { const ps = st.events.filter(e => e.type === "pump" && e.end_at != null && e.pump && e.pump.ml); return ps.length ? `<p class="sub small">Pumped ${esc(fmtVol(ps.reduce((a, e) => a + e.pump.ml, 0)))} in ${ps.length} session${ps.length === 1 ? "" : "s"}.</p>` : ""; })()}
+    ${st.gap || st.longestNight ? `<p class="sub small">${st.gap ? `Average gap between day feeds ${fmtDur(st.gap)}. ` : ""}${st.longestNight ? `Longest night stretch ${fmtDur(st.longestNight)}, ${st.nightWakings} wakings.` : ""}</p>` : ""}
+    <div class="row wrap" role="group" aria-label="Filter">${[["all", "All"], ["feed", "Feeds"], ["sleep", "Sleep"], ["diaper", "Diapers"]].map(([k, l]) => `<button type="button" class="chip" data-filter="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div>
+    ${list.length ? `<div class="list">${list.map(e => `<button type="button" class="li" data-edit="${e.id}"><span class="badge b-${evBadge(e)}">${icon(evIcon(e))}</span>
+       <span class="grow"><span class="h3" style="font-weight:600">${esc(evLabel(e))}</span><br><span class="meta num">${fmtTime(e.start_at)}${e.end_at && e.type === "sleep" ? ` to ${fmtTime(e.end_at)}` : ""}${e.source === "text" ? ` · typed "${esc(e.raw_text)}"` : ""}${e.note ? ` · ${esc(e.note)}` : ""}</span></span>
+       ${whoDot(e.logged_by)}${icon("chevron", "s")}</button>`).join("")}</div>`
+      : `<div class="card empty"><span class="h3">${ds === today ? "Nothing logged yet today" : "Nothing logged this day"}</span><span>Entries appear here as you log them. You can add one you missed.</span><button type="button" class="btn ghost" data-act="addpast">${icon("plus")}Add a past entry</button></div>`}
+    <div class="actions"><button type="button" class="btn ghost" data-act="share-day">${icon("share", "s")}Copy day summary</button><button type="button" class="btn ghost" data-act="export">${icon("download", "s")}Export CSV</button></div>
+    <p class="sub small" style="text-align:center">Tap any entry to change or delete it.</p>
+  </div>`;
+}
+
+function viewPlan() {
+  const now = Date.now(), pd = planDoc(), cur = pd.phase, sel = S.planPhase || cur, ph = PHASES[sel - 1];
+  const r = readiness(sel, now), co = coaching(now);
+  return `
+  <div class="topbar"><div class="grow"><span class="eyebrow">12 Hours' Sleep by 12 Weeks Old</span><h1 class="h1">Plan</h1></div></div>
+  <div class="stack">
+    ${banners()}
+    <div class="ladder" role="group" aria-label="Phases">${PHASES.map(x => `<button type="button" class="rung ${x.n === cur ? "current" : ""}" data-phase="${x.n}" aria-pressed="${x.n === sel}"><b>Phase ${x.n}</b><span>${x.n === cur ? "Now · " : ""}${esc(x.short)}</span></button>`).join("")}</div>
+    <p class="sub small">All phases are open. Tap one to read it or switch to it.</p>
+    <div class="card stack">
+      <div class="row"><h2 class="h2 grow">Phase ${sel} · ${esc(ph.name)}</h2>${sel === cur ? '<span class="tag book">Current</span>' : ""}</div>
+      <p>${esc(ph.goal)}</p><p class="sub small">${esc(ph.when)}</p>
+      <div>${ph.book.map(([h, b]) => `<div class="rule"><span class="tag book">Book</span><div class="grow"><b>${esc(h)}</b><p class="sub small">${esc(b)}</p></div></div>`).join("")}
+      ${ph.tips.map(([h, b]) => `<div class="rule"><span class="tag tip">Cradle tip</span><div class="grow"><b>${esc(h)}</b><p class="sub small">${esc(b)}</p></div></div>`).join("")}</div>
+    </div>
+    ${r.length ? `<div class="card" style="background:var(--plan-soft)"><div class="row"><span class="h3 grow" style="color:var(--plan-ink)">${icon("info", "s")} The book's checks for Phase ${sel}</span><span class="tag" style="background:var(--card);color:var(--plan-ink)">${r.filter(x => x.ok).length} of ${r.length}</span></div>
+      ${r.map(x => `<div class="check"><span class="tick ${x.ok ? "on" : ""}">${icon("check", "s")}</span><div class="grow"><b>${esc(x.label)}</b><p class="sub small">${esc(x.meta)}</p></div>${x.act && !x.ok ? `<button type="button" class="link" data-act="${x.act}">Add</button>` : ""}</div>`).join("")}
+      <p class="small" style="color:var(--plan-ink);margin-top:8px">Advice, not a lock. You can start any phase whenever you choose.</p></div>` : ""}
+    ${sel !== cur ? `<button type="button" class="btn big block" data-start="${sel}">Start Phase ${sel}${r.length && r.some(x => !x.ok) ? " anyway" : ""}</button>` : ""}
+    ${sel === 2 && cur >= 2 ? phase2Rhythm(now) : ""}
+    <section class="section"><div class="row"><h2 class="h2">Pattern vs plan</h2></div>
+      ${co.ready ? patternCard(co, cur) : `<div class="card empty"><span class="h3">Log ${3 - co.days.length} more full day${3 - co.days.length === 1 ? "" : "s"}</span><span>After 3 to 4 days of logging, Cradle maps ${pr("his")} real days against the plan and suggests the first small changes.</span><span class="small">${co.days.length} of 3 days logged so far.</span></div>`}
+    </section>
+    <section class="section"><h2 class="h2">Before you push the plan</h2><div class="card">${CAVEATS.map(s => `<div class="rule"><span class="tag aap">Pediatric</span><p class="grow small">${esc(s)}</p></div>`).join("")}</div></section>
+    <section class="section"><h2 class="h2">Safe sleep</h2><div class="card">${SAFE_SLEEP.map(s => `<div class="rule"><span class="tag aap">AAP</span><p class="grow small">${esc(s)}</p></div>`).join("")}</div></section>
+    <p class="sub small">Phase rules are summarized from the book, not quoted, and a few numbers come from general guidance. Check them against the book and with your pediatrician. Labels show the source: Book, Cradle tip (not from the book), AAP or general pediatric guidance.</p>
+  </div>`;
+}
+function phase2Rhythm(now) {
+  const ds = dayStartOf(now), tg = targetFeeds(ds), fs = feeds().filter(e => e.start_at >= ds);
+  return `<div class="card"><h2 class="h3">Today's rhythm</h2><div class="timeline">${tg.map((t, i) => {
+    const hit = fs.find(e => Math.abs(e.start_at - t) < 90 * MIN);
+    return `<div class="tl"><span class="t num">${fmtTime(t)}</span><span class="dot d-feed"></span><span class="grow">Feed${i === 0 ? " + start the day" : i === 3 ? " + bedtime" : ""}<br><span class="sub small">${hit ? `${fmtTime(hit.start_at)} · ${esc(feedLabel(hit, true))} · ${Math.round((hit.start_at - t) / MIN)} min ${hit.start_at >= t ? "late" : "early"}` : t < now ? "Not logged" : "Coming up"}</span></span>${hit ? `<span class="tick on">${icon("check", "s")}</span>` : ""}</div>`;
+  }).join("")}<div class="tl"><span class="t">Night</span><span class="dot d-sleep"></span><span class="grow">Feed when hungry<br><span class="sub small">Phase 3 fades these</span></span></div></div></div>`;
+}
+function patternCard(co, cur) {
+  const pct = (t, ds) => Math.max(0, Math.min(100, ((t - ds) / DAY) * 100));
+  const row = (label, st) => `<span>${esc(label)}</span><div class="bar" role="img" aria-label="${esc(label)}: ${st.feeds.length} feeds, ${fmtDur(st.daySleep)} day sleep">
+    <i class="night" style="left:${pct(st.bed, st.ds)}%;right:0"></i>
+    ${st.sleeps.map(x => `<i class="s" style="left:${pct(x.a, st.ds)}%;width:${Math.max(0.6, pct(x.b, st.ds) - pct(x.a, st.ds))}%"></i>`).join("")}
+    ${st.feeds.map(e => `<i class="f" style="left:${pct(e.start_at, st.ds)}%"></i>`).join("")}</div>`;
+  const last = co.days[co.days.length - 1];
+  const goal = `<span style="color:var(--plan-ink);font-weight:600">Goal</span><div class="bar" role="img" aria-label="Goal: ${cur >= 2 ? "four feeds 4 hours apart, " : ""}12-hour night">
+    <i class="s" style="left:${pct(last.bed, last.ds)}%;right:0;opacity:.45"></i>
+    ${(cur >= 2 ? targetFeeds(last.ds) : targetFeeds(last.ds)).map(t => `<i class="g" style="left:${pct(t, last.ds)}%"></i>`).join("")}</div>`;
+  const hours = [0, 6, 12, 18, 24].map(h => fmtTime(last.ds + h * HR).replace(":00", "").replace(" ", ""));
+  return `<div class="card stack">
+    <div class="strip">${co.days.map(d => row(new Date(d.ds).toLocaleDateString([], { weekday: "short" }), d)).join("")}${goal}</div>
+    <div class="axis num">${hours.map(h => `<span>${h}</span>`).join("")}</div>
+    <div class="legend"><span><i style="background:var(--sleep)"></i>Sleep</span><span><i style="background:var(--feed)"></i>Feed</span><span><i style="background:var(--plan)"></i>Book's four feeds</span><span><i style="background:var(--sleep-soft)"></i>Night</span></div>
+  </div>
+  <h3 class="h3" style="margin-top:6px">First small changes</h3>
+  <div class="list">${co.out.map(x => `<div class="li" style="align-items:flex-start"><span class="tag ${x.src}">${x.src === "book" ? "Book" : "Cradle tip"}</span><div class="grow"><b>${esc(x.title)}</b><p class="sub small">${esc(x.body)}</p></div></div>`).join("")}</div>
+  ${B.sample && !S.demo ? `<div class="card stack"><div class="row"><span class="tag claude">Claude's read · not from the book</span></div>
+    ${S.claudeRead ? `<p class="claude-read">${esc(S.claudeRead)}</p>` : `<p class="sub small">Ask Claude to look over these days in plain words. It sees the numbers above, not the raw log.</p>`}
+    <button type="button" class="btn ghost" data-act="ask-claude" id="askClaude">${icon("sparkle", "s")}${S.claudeRead ? "Ask again" : "Ask Claude about this pattern"}</button></div>` : ""}`;
+}
+async function askClaude(btn) {
+  const co = coaching(), p = prof();
+  const summary = co.days.map(d => ({ day: fmtDay(d.ds), feeds: d.feeds.length, day_feeds: d.dayFeeds.length, night_feeds: d.nightFeeds.length, bottle_ml: Math.round(d.ml), breast_min: Math.round(d.breastMin), avg_day_gap_min: d.gap ? Math.round(d.gap / MIN) : null, day_sleep_min: Math.round(d.daySleep / MIN), naps: d.naps, longest_night_min: Math.round(d.longestNight / MIN), down_at: d.downAt ? fmtTime(d.downAt) : null, pee: d.pee, poop: d.poop }));
+  btn.setAttribute("aria-busy", "true"); btn.lastChild.textContent = "Thinking…";
+  try {
+    const r = await B.sample(`You are a calm, kind coach for a tired parent following Suzy Giordano's "Twelve Hours' Sleep by Twelve Weeks Old". Baby is ${ageStr()} old, phase ${planDoc().phase}, feeding ${p.feeding}, day ${p.day_start} to bedtime ${p.bedtime}.
+Last days: ${JSON.stringify(summary)}
+Write 3 short bullet points (under 90 words total) on what the pattern shows and one small next step. Mark anything that is not from the book with "(mine)". Never judge. Never restrict night feeds before phase 3. If anything looks like a health concern (few wet diapers, poor feeding), say to call the pediatrician. Plain text, no headings.`, { modelTier: "default" });
+    S.claudeRead = r.text.trim();
+  } catch (e) {
+    S.claudeRead = null;
+    toast(e && e.code === "rate_limited" ? "Claude is busy. Try again in a minute." : e && e.code === "not_granted" ? "Claude access wasn't allowed. You can turn it on in the page's permissions." : "Couldn't reach Claude right now.");
+  }
+  scheduleRender();
+}
+
+function viewMe() {
+  const p = prof(), ped = p.pediatrician, w = latestCheck("weight");
+  const people = Object.entries(S.people).map(([id, x]) => x.isMe ? "You" : (x.name || "Someone").split(" ")[0]);
+  const row = (act, ic, label, val) => `<button type="button" class="li" data-act="${act}">${icon(ic)}<span class="grow">${label}</span><span class="val">${esc(val)}</span>${icon("chevron", "s")}</button>`;
+  return `
+  <div class="topbar"><div class="grow"><span class="eyebrow">Settings and data</span><h1 class="h1">Me</h1></div>${syncPill()}</div>
+  <div class="stack">
+    ${banners()}
+    <button type="button" class="card row" data-act="profile" style="text-align:left"><span class="badge" style="background:var(--sleep-soft);color:var(--sleep-ink);font:600 20px var(--f-display)">${esc((p.name || "B")[0])}</span>
+      <span class="grow"><span class="h3">${esc(p.name || "Your baby")}</span><br><span class="sub small">${p.birth_date ? `Born ${fmtDate(birthMs())} · ${esc(ageStr())}` : "Add birth date"} · ${esc({ both: "breast + bottle", breast: "breast", bottle: "bottle" }[p.feeding])} · ${esc(fmtVol(p.bottle_ml_default))} bottles</span></span>${icon("edit", "s")}</button>
+    <div class="list">
+      ${row("hand", "hand", "Free hand", S.prefs.hand === "left" ? "Left" : "Right")}
+      ${row("theme", "sun", "Light or dark", { auto: "Match my phone", light: "Light", dark: "Dark" }[S.prefs.theme || "auto"])}
+      ${row("night", "moon", "Night mode", { auto: "Auto at bedtime", on: "Always on", off: "Off" }[S.prefs.night])}
+      ${row("vibrate", "sparkle", "Vibrate on log", S.prefs.vibrate ? "On" : "Off")}
+      ${row("profile", "sun", "Day and bedtime", `${fmtTime(new Date().setHours(...p.day_start.split(":").map(Number), 0, 0))} to ${fmtTime(new Date().setHours(...p.bedtime.split(":").map(Number), 0, 0))}`)}
+      ${row("units", "bottle", "Units", p.units)}
+    </div>
+    <div class="list">
+      ${row("call", "phone", "Pediatrician", ped.phone ? [ped.name, ped.phone].filter(Boolean).join(" · ") : "Add number")}
+      ${row("weight", "scale", "Weights and doctor visits", w ? `${fmtWeight(w.grams)} · ${fmtDate(w.at)}` : "Add a weight")}
+      ${row("checks", "list", "History of checks", `${D().checks.size}`)}
+    </div>
+    <div class="list">
+      ${row("setup-guide", "info", "Setup guide", "Home Screen, partner, Claude")}
+      ${row("people", "people", "Who's logging", people.length ? people.join(", ") : "Just you so far")}
+      ${row("export", "download", "Export log", "CSV")}
+      ${row("share-day", "share", "Copy today's summary", "Text")}
+      ${row("demo", "info", "Preview with a sample day", S.demo ? "On" : "Off")}
+      ${row("feedback", "chat", "Send feedback", "")}
+    </div>
+    <div class="card stack"><h2 class="h3">Your data</h2>
+      <p class="sub small">No account needed. The log lives in this private page and is shared only with people you invite as editors. It holds ${esc(prof().name || "your baby")}'s details, feeds, sleep, diapers, weights and who logged each entry. Settings like your free hand stay with you. Version ${APP_VERSION}. ${S.backend === "local" ? "Right now it's saved on this phone only." : ""}</p>
+      <p class="sub small">Cradle isn't medical advice. Health checks are prompts to call your pediatrician, not diagnoses.</p>
+      <button type="button" class="btn quiet" data-act="wipe">${icon("trash", "s")}Delete all entries…</button></div>
+  </div>`;
+}
+
+/* ---------- view wiring ---------- */
+function wireView(v) {
+  $$("[data-edit]", v).forEach(b => b.onclick = () => openEdit(b.dataset.edit));
+  $$("[data-go]", v).forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
+  $$("[data-day]", v).forEach(b => b.onclick = () => { S.logDay = +b.dataset.day; render(); });
+  $$("[data-filter]", v).forEach(b => b.onclick = () => { S.logFilter = b.dataset.filter; render(); });
+  $$("[data-phase]", v).forEach(b => b.onclick = () => { S.planPhase = +b.dataset.phase; render(); });
+  $$("[data-start]", v).forEach(b => b.onclick = () => openStartPhase(+b.dataset.start));
+  $$("[data-dismiss]", v).forEach(b => b.onclick = () => { const id = b.dataset.dismiss; write("flags/" + id, { dismissed_at: Date.now(), by: (S.me && S.me.id) || null }); toast("Dismissed for today", [{ label: "Undo", icon: "undo", fn: () => write("flags/" + id, null) }]); });
+  $$("[data-act]", v).forEach(b => b.onclick = () => act(b.dataset.act, b));
+  const dr = $("#daysRow", v); if (dr) { const on = dr.querySelector('[aria-pressed="true"]'); on && on.scrollIntoView({ inline: "center", block: "nearest" }); }
+}
+function act(a, el) {
+  ({
+    pump: openPump, "setup-home": () => openSetup("home"), "setup-partner": () => openSetup("partner"), "setup-claude": () => openSetup("claude"), "setup-guide": openSetupGuide,
+    "setup-hide": () => { markSetup("hidden"); toast("Hidden. Find it again in Me, under Setup guide."); },
+    "upd-copy": () => copyText(UPDATE_PROMPT, "Copied. Paste it into Claude Code."), "upd-later": () => { ls.set("cradle.update", latest ? latest.version : ""); render(); },
+    "demo-off": () => setDemo(false), demo: () => setDemo(!S.demo),
+    addpast: openAddPast, diaper: openDiaper, weight: openWeight, doctor2: () => openDoctor(2), doctor3: () => openDoctor(3),
+    call: openCall, "share-day": () => copyText(daySummaryText(S.route === "log" && S.logDay ? S.logDay : dayStartOf(Date.now())), "Day summary copied"),
+    export: exportCsv, profile: openProfile, units: () => openProfile(), people: openPeople, checks: openChecks, feedback: openFeedback, wipe: openWipe,
+    hand: () => openChoice("Free hand", "The big Feed button, send button, ••• buttons, close buttons and Undo all move to this side. To switch on the fly, tap the hand button above the big buttons on Today.", [["right", "Right hand"], ["left", "Left hand"]], S.prefs.hand, v => { savePrefs({ hand: v }); toast(v === "left" ? "Buttons moved to the left" : "Buttons moved to the right"); }),
+    theme: () => openChoice("Light or dark", "Night mode still turns the screen dim amber at bedtime unless you switch it off below.", [["auto", "Match my phone"], ["light", "Light"], ["dark", "Dark"]], S.prefs.theme || "auto", v => savePrefs({ theme: v })),
+    night: () => openChoice("Night mode", "A dim amber screen with no bright flashes or sounds.", [["auto", "Auto at bedtime"], ["on", "Always on"], ["off", "Off"]], S.prefs.night, v => savePrefs({ night: v })),
+    vibrate: () => savePrefs({ vibrate: !S.prefs.vibrate }),
+    "ask-claude": () => askClaude(el),
+  }[a] || (() => {}))();
+}
+function setDemo(on) {
+  S.demo = on; ls.set("cradle.demo", on); S.ver++;
+  S.demoData = on ? buildDemo() : null; S.claudeRead = null;
+  toast(on ? "Showing a sample day. Nothing is saved." : "Back to your real log");
+  render();
+}
+function openChoice(title, hint, opts, cur, fn) {
+  openSheet(title, `<p class="sub">${esc(hint)}</p><div class="stack">${opts.map(([v, l]) => `<button type="button" class="btn ${v === cur ? "" : "ghost"} block" data-v="${v}" aria-pressed="${v === cur}">${v === cur ? icon("check") : ""}${esc(l)}</button>`).join("")}</div>`,
+    r => $$("[data-v]", r).forEach(b => b.onclick = () => { fn(b.dataset.v); closeSheet(); }));
+}
+function openStartPhase(n) {
+  const r = readiness(n), ph = PHASES[n - 1], miss = r.filter(x => !x.ok);
+  openSheet(`Start Phase ${n}?`, `
+    <p>${esc(ph.goal)}</p>
+    ${r.length ? `<div class="card"><div class="row"><b class="grow">The book recommends</b><span class="tag book">${r.length - miss.length} of ${r.length} met</span></div>${r.map(x => `<div class="check"><span class="tick ${x.ok ? "on" : ""}">${icon("check", "s")}</span><div><b>${esc(x.label)}</b><p class="sub small">${esc(x.meta)}</p></div></div>`).join("")}</div>` : ""}
+    <p class="sub small">These are recommendations, not rules. You can start now and switch back any time.</p>
+    <button type="button" class="btn big block" id="go" autofocus>Start Phase ${n}${miss.length ? " anyway" : ""}</button>
+    <button type="button" class="btn ghost block" id="notyet">Not yet</button>`, root => {
+    $("#go", root).onclick = () => {
+      const pd = planDoc(), prev = pd.phase;
+      const next = Object.assign({}, pd, { phase: n, phase_started_at: Date.now(), history: (pd.history || []).concat([{ phase: n, from: prev, at: Date.now(), by: (S.me && S.me.id) || null, checks_met: r.length - miss.length, checks: r.length }]) });
+      closeSheet(); write("plan/current", next); S.planPhase = null; S.claudeRead = null;
+      toast(`Phase ${n} started`, [{ label: "Undo", icon: "undo", fn: () => write("plan/current", pd) }]);
+    };
+    $("#notyet", root).onclick = closeSheet;
+  });
+}
+function openWeight() {
+  const w = latestCheck("weight"), lbs = w ? w.grams / LB : 10;
+  openSheet("Log a weight", `
+    <div class="fields2"><div class="field"><label for="wLb">Pounds</label><input id="wLb" type="number" inputmode="numeric" min="0" max="40" value="${Math.floor(lbs)}" autofocus></div>
+    <div class="field"><label for="wOz">Ounces</label><input id="wOz" type="number" inputmode="decimal" min="0" max="15.9" step="0.5" value="${Math.round((lbs - Math.floor(lbs)) * 16)}"></div></div>
+    <div class="field"><label for="wAt">Date</label><input id="wAt" type="date" value="${toDateInput(Date.now())}"></div>
+    <div class="field"><label for="wNote">Note</label><input id="wNote" placeholder="Doctor visit, home scale…"></div>
+    <button type="button" class="btn big block" id="wSave">Save weight</button>`, root => {
+    $("#wSave", root).onclick = () => {
+      const g = ((+$("#wLb", root).value || 0) + (+$("#wOz", root).value || 0) / 16) * LB;
+      if (g < 1000 || g > 20000) { toast("That weight looks off. Check pounds and ounces."); return; }
+      const at = new Date($("#wAt", root).value + "T12:00").getTime() || Date.now();
+      closeSheet(); const id = newId();
+      write("checks/" + id, { kind: "weight", at, grams: Math.round(g), note: $("#wNote", root).value.trim() || null, by: (S.me && S.me.id) || null });
+      toast(`Weight saved · ${fmtWeight(g)}`, [{ label: "Undo", icon: "undo", fn: () => write("checks/" + id, null) }]);
+    };
+  });
+}
+function openDoctor(phase) {
+  openSheet(`Pediatrician OK for Phase ${phase}`, `
+    <p class="sub">${phase === 2 ? pr("Log it when your pediatrician agrees he's ready for four daytime feeds.") : "Log it when your pediatrician agrees you can start fading night feeds."}</p>
+    <div class="field"><label for="dAt">Date</label><input id="dAt" type="date" value="${toDateInput(Date.now())}"></div>
+    <div class="field"><label for="dNote">What they said</label><textarea id="dNote" rows="3" placeholder="Optional"></textarea></div>
+    <button type="button" class="btn big block" id="dSave">Save</button>`, root => {
+    $("#dSave", root).onclick = () => {
+      const id = newId(); closeSheet();
+      write("checks/" + id, { kind: "doctor_ok", phase, at: new Date($("#dAt", root).value + "T12:00").getTime() || Date.now(), note: $("#dNote", root).value.trim() || null, by: (S.me && S.me.id) || null });
+      toast("Saved", [{ label: "Undo", icon: "undo", fn: () => write("checks/" + id, null) }]);
+    };
+  });
+}
+function openChecks() {
+  const list = [...D().checks.entries()].map(([id, c]) => Object.assign({ id }, c)).sort((a, b) => b.at - a.at);
+  openSheet("Weights and doctor visits", `
+    <div class="actions"><button type="button" class="btn ghost" id="cW">${icon("scale", "s")}Weight</button><button type="button" class="btn ghost" id="cD">${icon("check", "s")}Doctor OK</button></div>
+    ${list.length ? `<div class="list">${list.map(c => `<div class="li"><span class="badge b-${c.kind === "weight" ? "sleep" : "diaper"}">${icon(c.kind === "weight" ? "scale" : "check")}</span><span class="grow"><b>${c.kind === "weight" ? esc(fmtWeight(c.grams)) : `Pediatrician OK for Phase ${c.phase}`}</b><br><span class="meta">${fmtDate(c.at)}${c.note ? ` · ${esc(c.note)}` : ""}</span></span><button type="button" class="iconbtn" data-del="${c.id}" aria-label="Delete">${icon("trash", "s")}</button></div>`).join("")}</div>`
+      : `<div class="empty"><span class="h3">No checks yet</span><span>Weights and your pediatrician's OKs show up here and on the Plan tab.</span></div>`}`, root => {
+    $("#cW", root).onclick = () => { closeSheet(); setTimeout(openWeight, 220); };
+    $("#cD", root).onclick = () => { closeSheet(); setTimeout(() => openDoctor(Math.max(2, Math.min(3, planDoc().phase + 1))), 220); };
+    $$("[data-del]", root).forEach(b => b.onclick = () => { const id = b.dataset.del, before = D().checks.get(id); closeSheet(); write("checks/" + id, null); toast("Deleted", [{ label: "Undo", icon: "undo", fn: () => write("checks/" + id, before) }]); });
+  });
+}
+function openCall() {
+  const ped = prof().pediatrician, tel = (ped.phone || "").replace(/[^\d+]/g, "");
+  openSheet(ped.phone ? "Call your pediatrician" : "Pediatrician's number", `
+    ${ped.phone ? `<div class="card stack" style="text-align:center"><span class="sub">${esc(ped.name || "Pediatrician")}</span><span class="h1 num" style="user-select:all">${esc(ped.phone)}</span></div>
+      <a class="btn big danger block" href="tel:${esc(tel)}">${icon("phone")}Call</a>
+      <button type="button" class="btn ghost block" id="cpy">${icon("copy", "s")}Copy number</button>
+      <p class="sub small">If the Call button doesn't open your phone app here, copy the number or dial it.</p>` : `<p class="sub">Add the number once and the Call button on any health check uses it.</p>`}
+    <div class="field"><label for="pedName">Name or practice</label><input id="pedName" value="${esc(ped.name)}" placeholder="Dr. Lee, Bayside Pediatrics"></div>
+    <div class="field"><label for="pedPhone">Phone</label><input id="pedPhone" type="tel" inputmode="tel" value="${esc(ped.phone)}" placeholder="(555) 123-4567" ${ped.phone ? "" : "autofocus"}></div>
+    <button type="button" class="btn ${ped.phone ? "ghost" : ""} block" id="pedSave">Save number</button>`, root => {
+    const c = $("#cpy", root); if (c) c.onclick = () => copyText(ped.phone, "Number copied");
+    $("#pedSave", root).onclick = () => {
+      const np = Object.assign({}, D().profile || DEFAULT_PROFILE, { pediatrician: { name: $("#pedName", root).value.trim(), phone: $("#pedPhone", root).value.trim() } });
+      closeSheet(); write("baby/profile", np); toast("Pediatrician saved");
+    };
+  });
+}
+function profileForm(p) {
+  return `
+    <div class="field"><label for="pName">Baby's name or nickname</label><input id="pName" value="${esc(p.name)}" autocomplete="off"></div>
+    <div class="fields2"><div class="field"><label for="pBorn">Born</label><input id="pBorn" type="date" value="${esc(p.birth_date)}"></div>
+      <div class="field"><label for="pPron">Call baby</label><select id="pPron">${[["he", "he / him"], ["she", "she / her"], ["they", "they / them"]].map(([v, l]) => `<option value="${v}" ${(p.pronoun || "they") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div></div>
+    <div class="fields2"><div class="field"><label for="pFeed">Feeding</label><select id="pFeed">${[["both", "Breast + bottle"], ["breast", "Breast"], ["bottle", "Bottle"]].map(([v, l]) => `<option value="${v}" ${p.feeding === v ? "selected" : ""}>${l}</option>`).join("")}</select></div></div>
+    <div class="fields2"><div class="field"><label for="pBottle">Usual bottle (ml)</label><input id="pBottle" type="number" inputmode="numeric" min="0" max="400" value="${Math.round(p.bottle_ml_default)}"></div>
+      <div class="field"><label for="pUnits">Units</label><select id="pUnits"><option value="ml" ${p.units === "ml" ? "selected" : ""}>ml</option><option value="oz" ${p.units === "oz" ? "selected" : ""}>oz</option></select></div></div>
+    <div class="fields2"><div class="field"><label for="pDay">Day starts</label><input id="pDay" type="time" value="${esc(p.day_start)}"></div>
+      <div class="field"><label for="pBed">Bedtime</label><input id="pBed" type="time" value="${esc(p.bedtime)}"></div></div>
+    <div class="field"><label for="pPlace">Sleeps in</label><input id="pPlace" value="${esc(p.sleep_place)}"></div>
+    <div class="fields2"><div class="field"><label for="pPedN">Pediatrician (optional)</label><input id="pPedN" value="${esc(p.pediatrician.name)}" placeholder="Name"></div>
+      <div class="field"><label for="pPedP">Their phone</label><input id="pPedP" type="tel" inputmode="tel" value="${esc(p.pediatrician.phone)}" placeholder="Number"></div></div>`;
+}
+function readProfile(root) {
+  return {
+    name: $("#pName", root).value.trim(), birth_date: $("#pBorn", root).value, pronoun: $("#pPron", root).value, feeding: $("#pFeed", root).value,
+    bottle_ml_default: Math.max(0, +$("#pBottle", root).value || 150), units: $("#pUnits", root).value,
+    day_start: $("#pDay", root).value || "08:00", bedtime: $("#pBed", root).value || "20:00", sleep_place: $("#pPlace", root).value.trim() || "bassinet",
+    pediatrician: { name: $("#pPedN", root).value.trim(), phone: $("#pPedP", root).value.trim() },
+  };
+}
+function openProfile() {
+  openSheet("About your baby", profileForm(prof()) + `<button type="button" class="btn big block" id="pSave">Save</button>`, root => {
+    $("#pSave", root).onclick = () => { const np = Object.assign({}, D().profile || {}, readProfile(root)); if (!np.name) { toast("Add a name or nickname"); $("#pName", root).focus(); return; } closeSheet(); write("baby/profile", np); toast("Saved"); };
+  });
+}
+function openPeople() {
+  const ids = new Set(evs().map(e => e.logged_by).filter(Boolean)); if (S.me && S.me.id) ids.add(S.me.id);
+  const counts = {}; for (const e of evs()) if (e.logged_by) counts[e.logged_by] = (counts[e.logged_by] || 0) + 1;
+  openSheet("Who's logging", `
+    <div class="list">${[...ids].map(id => `<div class="li">${whoDot(id)}<span class="grow">${esc(S.people[id] && S.people[id].isMe ? "You" : personName(id))}</span><span class="val">${counts[id] || 0} entries</span></div>`).join("") || `<div class="li">Just you so far</div>`}</div>
+    <p class="sub small">To add a partner or a night nurse, share this page with them as an editor from the page's Share menu. They log with their own taps, and every entry shows who logged it.</p>`);
+}
+function openFeedback() {
+  openSheet("Send feedback", `<p class="sub">What's annoying, missing or great? It's saved with this log. To tell the people who make Cradle, <a href="https://github.com/alvinrgm/cradle-app/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</p>
+    <div class="field"><label for="fb">Your note</label><textarea id="fb" rows="5" autofocus></textarea></div>
+    <button type="button" class="btn big block" id="fbSend">Send</button>`, root => {
+    $("#fbSend", root).onclick = async () => {
+      const text = $("#fb", root).value.trim(); if (!text) return;
+      closeSheet();
+      if (B.db) { try { await B.db.collection("feedback").doc(newId()).set({ text, at: Date.now(), by: (S.me && S.me.id) || null, route: S.route }); toast("Thanks. Feedback sent."); } catch { toast("Couldn't send. Try again later.", [], { error: true }); } }
+      else copyText(text, "Copied.");
+    };
+  });
+}
+function openWipe() {
+  openSheet("Delete all entries?", `<p>This removes every feed, sleep and diaper entry for everyone who uses this log. It can't be undone. Export a CSV first if you want a copy.</p>
+    <div class="field"><label for="wipeTxt">Type DELETE to confirm</label><input id="wipeTxt" autocomplete="off" autocapitalize="characters"></div>
+    <button type="button" class="btn ghost block" id="wipeExport">${icon("download", "s")}Export CSV first</button>
+    <button type="button" class="btn danger big block" id="wipeGo">Delete all entries</button>`, root => {
+    $("#wipeExport", root).onclick = exportCsv;
+    $("#wipeGo", root).onclick = async () => {
+      if ($("#wipeTxt", root).value.trim().toUpperCase() !== "DELETE") { toast("Type DELETE to confirm"); return; }
+      closeSheet(); const ids = [...D().events.keys()];
+      for (const id of ids) await write("events/" + id, null);
+      toast(`Deleted ${ids.length} entries`);
+    };
+  });
+}
+function openIntro() {
+  openSheet("Welcome to Cradle", `
+    <p>Cradle is set up for ${esc(prof().name || "your baby")}. Everything is built for one thumb.</p>
+    <div class="list">
+      <div class="li"><span class="badge b-feed">${icon("bottle")}</span><span class="grow"><b>One tap logs it</b><br><span class="meta">Feed repeats the last bottle size. Sleep starts and stops a timer. Undo is always there.</span></span></div>
+      <div class="li"><span class="badge b-sleep">${icon("more")}</span><span class="grow"><b>The ••• button for details</b><br><span class="meta">Change the amount, pick a side, or set an earlier time.</span></span></div>
+      <div class="li"><span class="badge b-diaper">${icon("send")}</span><span class="grow"><b>Or type it like a text</b><br><span class="meta">"fed 120ml 8:15", "pee", "down 1:30", "up 2:45"</span></span></div>
+    </div>
+    <h3 class="h3">Which hand is usually free?</h3>
+    <div class="actions"><button type="button" class="hand" data-hand="left" aria-pressed="${S.prefs.hand === "left"}"><b>L</b>Left hand<span>Buttons lean left</span></button><button type="button" class="hand" data-hand="right" aria-pressed="${S.prefs.hand !== "left"}"><b>R</b>Right hand<span>Buttons lean right</span></button></div>
+    <button type="button" class="btn big block" id="introGo" autofocus>Start logging</button>`, root => {
+    $$("[data-hand]", root).forEach(b => b.onclick = () => { savePrefs({ hand: b.dataset.hand }); $$("[data-hand]", root).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+    $("#introGo", root).onclick = closeSheet;
+  }, () => savePrefs({ seenIntro: true }));
+}
+
+/* ---------- getting set up: home screen, partner, Claude permission ---------- */
+const phoneOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) ? "ios" : /android/i.test(navigator.userAgent) ? "android" : "";
+const standalone = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch { return false; } };
+const isOwner = () => { try { return !B.user || (B.user.isOwner ? B.user.isOwner() : true); } catch { return true; } };
+function setupSteps() {
+  const d = S.prefs.setup || {};
+  const steps = [
+    { k: "home", t: "Put Cradle on your Home Screen", s: "Opens full screen, like an app.", done: d.home || standalone() },
+    isOwner() ? { k: "partner", t: "Invite your partner", s: "Same log, both phones. Every entry shows who logged it.", done: d.partner } : null,
+    { k: "claude", t: "Let Claude read messy notes", s: "Type \"ate 4oz around 3\" and Claude sorts it out.", done: d.claude },
+  ].filter(Boolean);
+  return steps;
+}
+function setupCard() {
+  if (S.demo || !S.profile || (S.prefs.setup || {}).hidden) return "";
+  const steps = setupSteps(); if (steps.every(x => x.done)) return "";
+  return `<div class="card setup"><div class="row"><h2 class="h3 grow">Get set up</h2><span class="sub small">${steps.filter(x => x.done).length} of ${steps.length}</span><button type="button" class="link" data-act="setup-hide">Hide</button></div>
+    <div class="list">${steps.map(x => `<button type="button" class="li" data-act="setup-${x.k}"><span class="tick ${x.done ? "on" : ""}">${x.done ? icon("check", "s") : ""}</span><span class="grow"><b>${esc(x.t)}</b><br><span class="meta">${esc(x.s)}</span></span>${icon("chevron", "s")}</button>`).join("")}</div></div>`;
+}
+function openSetupGuide() {
+  openSheet("Setup guide", `<div class="list setup">${setupSteps().map(x => `<button type="button" class="li" data-st="${x.k}"><span class="tick ${x.done ? "on" : ""}">${x.done ? icon("check", "s") : ""}</span><span class="grow"><b>${esc(x.t)}</b><br><span class="meta">${esc(x.s)}</span></span>${icon("chevron", "s")}</button>`).join("")}</div>`,
+    root => $$("[data-st]", root).forEach(b => b.onclick = () => openSetup(b.dataset.st)));
+}
+function markSetup(k, v = true) { savePrefs({ setup: Object.assign({}, S.prefs.setup || {}, { [k]: v }) }); }
+function openSetup(k) {
+  const doneBtn = (label = "Done") => `<button type="button" class="btn big block" id="stDone">${label}</button>`;
+  const wire = root => { const b = $("#stDone", root); if (b) b.onclick = () => { markSetup(k); closeSheet(); toast("Nice. One less thing."); }; };
+  const os = phoneOS();
+  if (k === "home") return openSheet("Add Cradle to your Home Screen", `
+    ${os !== "android" ? `<h3 class="h3">iPhone (Safari)</h3><ol class="steps"><li>Open this page in <b>Safari</b>. In the Claude app, tap the page's menu and choose <b>Open in browser</b> first.</li><li>Tap the <b>Share</b> button at the bottom of the screen.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>` : ""}
+    ${os !== "ios" ? `<h3 class="h3">Android (Chrome)</h3><ol class="steps"><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu at the top right.</li><li>Tap <b>Add to Home screen</b>, then <b>Add</b>.</li></ol>` : ""}
+    <p class="sub small">The first time, you may need to sign in to Claude in that browser.</p>${doneBtn("I added it")}`, wire);
+  if (k === "partner") return openSheet("Invite your partner", `
+    <p>Cradle is one shared log. Your partner (or a grandparent or night nurse) taps on their own phone, and you both see every feed, nap and diaper.</p>
+    <ol class="steps"><li>Open this page on <b>claude.ai</b> on a computer or in your phone's browser.</li><li>Tap <b>Share</b> at the top of the page.</li><li>Add their email, give them <b>edit</b> access, and send. View-only access can't log.</li><li>They sign in to Claude with that email and open the link.</li><li>They pick their own free hand. Their settings don't change yours.</li></ol>
+    <p class="sub small">Only people you invite can see the log. You can remove someone from the same Share menu any time.</p>${doneBtn("I invited them")}`, wire);
+  if (k === "claude") return openSheet("Let Claude read messy notes", `
+    <p>Simple entries like "fed 120ml 8:15" or "pee" work offline and instantly. For anything looser, Cradle asks Claude to read it, and Claude can also explain the week's pattern on the Plan tab.</p>
+    <ol class="steps"><li>The first time, a box asks to let this page use Claude. Tap <b>Allow</b>.</li><li>It runs on your own Claude plan. Nothing leaves your account.</li></ol>
+    <button type="button" class="btn big block" id="stTry">Try it now</button>`, root => {
+      $("#stTry", root).onclick = async () => { closeSheet(); markSetup("claude"); const i = $("#say"); if (i) { i.value = "ate about 4 oz around 3 then slept"; i.focus(); } toast("Tap the arrow to send it to Claude, or edit it first."); };
+    });
+}
+
+/* ---------- first run (only when no baby profile exists yet) ---------- */
+let _ob = { step: 0 };
+function viewOnboard() {
+  const p = Object.assign({}, DEFAULT_PROFILE, _ob.profile || {});
+  if (_ob.step === 0) return `<div class="ob"><div class="moon">${icon("moon")}</div><h1 class="h1" style="text-align:center;font-size:44px">Cradle</h1>
+    <p class="sub" style="text-align:center;font-size:17px">Log a feed, nap or diaper in one tap, with the hand that isn't holding the baby.</p><div class="grow"></div>
+    <button type="button" class="btn big block" data-ob="next">Get started</button>
+    <button type="button" class="btn ghost block" data-ob="demo">Look around with a sample day</button>
+    <p class="sub small" style="text-align:center">No account. About a minute to set up.</p></div>`;
+  if (_ob.step === 1) return `<div class="ob"><span class="eyebrow">Step 1 of 2</span><h1 class="h1">About your baby</h1>${profileForm(p)}
+    <h2 class="h3">Which hand is usually free?</h2>
+    <div class="actions"><button type="button" class="hand" data-hand="left" aria-pressed="${S.prefs.hand === "left"}"><b>L</b>Left hand<span>Buttons lean left</span></button><button type="button" class="hand" data-hand="right" aria-pressed="${S.prefs.hand !== "left"}"><b>R</b>Right hand<span>Buttons lean right</span></button></div>
+    <button type="button" class="btn big block" data-ob="next">Continue</button></div>`;
+  return `<div class="ob"><span class="eyebrow">Step 2 of 2</span><h1 class="h1">Your sleep plan</h1>
+    <p class="sub">Based on "12 Hours' Sleep by 12 Weeks Old." Every phase is open. The book's checks show as advice.</p>
+    <div class="stack">${PHASES.map(x => `<button type="button" class="card row" data-pick="${x.n}" aria-pressed="${(_ob.phase || 1) === x.n}" style="text-align:left;${(_ob.phase || 1) === x.n ? "box-shadow:inset 0 0 0 2px var(--plan);background:var(--plan-soft)" : ""}"><span class="badge" style="background:var(--plan)">${x.n}</span><span class="grow"><b>Phase ${x.n} · ${esc(x.name)}</b><br><span class="sub small">${esc(x.goal)}</span></span></button>`).join("")}</div>
+    <button type="button" class="btn big block" data-ob="finish">Start Phase ${_ob.phase || 1}</button></div>`;
+}
+function wireOnboard(v) {
+  $$("[data-hand]", v).forEach(b => b.onclick = () => { savePrefs({ hand: b.dataset.hand }); $$("[data-hand]", v).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+  $$("[data-pick]", v).forEach(b => b.onclick = () => { _ob.phase = +b.dataset.pick; v.innerHTML = viewOnboard(); wireOnboard(v); });
+  $$("[data-ob]", v).forEach(b => b.onclick = () => {
+    const k = b.dataset.ob;
+    if (k === "demo") return setDemo(true);
+    if (k === "next" && _ob.step === 1) { const p = readProfile(v); if (!p.name) { toast("Add a name or nickname"); $("#pName", v).focus(); return; } _ob.profile = p; }
+    if (k === "finish") {
+      const now = Date.now();
+      write("baby/profile", Object.assign({ created_at: now }, _ob.profile));
+      write("plan/current", { phase: _ob.phase || 1, phase_started_at: now, history: [{ phase: _ob.phase || 1, at: now, by: (S.me && S.me.id) || null }] });
+      savePrefs({ seenIntro: true }); delete v.dataset.onboard; location.hash = "today"; return;
+    }
+    _ob.step++; v.innerHTML = viewOnboard(); wireOnboard(v); v.scrollTop = 0;
+  });
+}
+
+/* ---------- live clocks, routing, boot ---------- */
+function tickLive() {
+  const now = Date.now();
+  $$("[data-since]").forEach(el => { const t = +el.dataset.since; el.textContent = el.dataset.fmt === "dur" ? fmtDur(now - t) : fmtClock(now - t); });
+  $$("[data-breast]").forEach(el => { const e = getEvent(el.dataset.breast); if (!e) return; const s = breastSec(e, now); el.textContent = fmtClock(s.total * 1000); const L = $('[data-side-time="L"]'), R = $('[data-side-time="R"]'); if (L) L.textContent = fmtClock(s.l * 1000); if (R) R.textContent = fmtClock(s.r * 1000); });
+}
+function boot() {
+  checkUpdate();
+  $("#sheetClose").onclick = closeSheet;
+  $("#scrim").onclick = closeSheet;
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && sheetOpen()) closeSheet(); });
+  window.addEventListener("hashchange", () => {
+    const h = location.hash.slice(1);
+    if (h === "feed" || h === "sleep" || h === "diaper") { history.replaceState(null, "", "#today"); render(); ({ feed: () => openFeed(), sleep: openSleep, diaper: openDiaper })[h](); return; }
+    render();
+  });
+  window.addEventListener("online", updateSync); window.addEventListener("offline", updateSync);
+  if (S.demo) S.demoData = buildDemo();
+  render();
+  setInterval(tickLive, 1000);
+  let lastNight = isNight();
+  setInterval(() => { const n = isNight(); if (n !== lastNight) { lastNight = n; render(); } else if (!sheetOpen() && document.activeElement !== $("#say")) render(); }, 30000);
+  const h0 = location.hash.slice(1);
+  connect().then(() => { if (S.demo) { S.demoData = buildDemo(); } render(); if (["feed", "sleep", "diaper"].includes(h0)) window.dispatchEvent(new HashChangeEvent("hashchange")); });
+}
+boot();
+</script>
