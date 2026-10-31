@@ -466,6 +466,13 @@ function localSave() {
   });
 }
 
+function docAt(target, path) {
+  const [c, id] = path.split("/");
+  if (path === "baby/profile") return target.profile;
+  if (path === "plan/current") return target.plan;
+  const m = { events: target.events, checks: target.checks, flags: target.flags }[c];
+  return m ? m.get(id) ?? null : undefined;
+}
 function applyDoc(target, path, data) {
   const [c, id] = path.split("/");
   if (path === "baby/profile") target.profile = data;
@@ -486,6 +493,7 @@ const outbox = {
 async function write(path, data) { // data === null deletes
   S.ver++;
   if (S.demo && S.demoData) { applyDoc(S.demoData, path, data); scheduleRender(); return true; }
+  const prev = docAt(S, path);
   applyDoc(S, path, data);
   scheduleRender();
   if (!B.db) { localSave(); return true; }
@@ -502,10 +510,12 @@ async function write(path, data) { // data === null deletes
     return true;
   } catch (e) {
     S.failed++;
+    const refused = e && (e.code === "not_granted" || e.code === "revoked" || e.code === "quota_exceeded");
+    if (refused) { outbox.done(path); if (prev !== undefined && docAt(S, path) === data) { applyDoc(S, path, prev); S.ver++; scheduleRender(); } } // never kept, so take it back off the screen
     const msg = e && e.code === "quota_exceeded" ? "Storage is full. Export and clear old entries in Me."
       : e && (e.code === "not_granted" || e.code === "revoked") ? "You can view this log but not change it. Ask whoever shared it for edit access."
       : "Couldn't save that yet. It's kept on this phone and will retry.";
-    toast(msg, [{ label: "Retry", fn: () => write(path, data) }], { error: true, ms: 8000 });
+    toast(msg, refused ? [] : [{ label: "Retry", fn: () => write(path, data) }], { error: true, ms: 8000 });
     return false;
   } finally { S.pending--; updateSync(); }
 }
@@ -1092,7 +1102,8 @@ function baseEvent(type, extra) {
 }
 async function createEvent(e, o = {}) {
   const id = o.id || newId();
-  await write("events/" + id, e);
+  const saved = await write("events/" + id, e);
+  if (saved === false) return id; // the error toast already said what happened
   buzz();
   if (!o.silent) toast(o.msg || `${evLabel(e)} logged · ${fmtTime(e.start_at)}`, [
     { label: "Edit", icon: "edit", fn: () => openEdit(id) },
@@ -1104,8 +1115,8 @@ function getEvent(id) { const e = D().events.get(id); return e ? Object.assign({
 async function changeEvent(id, patch, o = {}) {
   const before = getEvent(id); if (!before) return;
   const after = Object.assign({}, before, patch, { updated_at: Date.now(), updated_by: (S.me && S.me.id) || null });
-  await write("events/" + id, after);
-  if (o.msg) toast(o.msg, [{ label: "Undo", icon: "undo", fn: () => write("events/" + id, before) }]);
+  const saved = await write("events/" + id, after);
+  if (o.msg && saved !== false) toast(o.msg, [{ label: "Undo", icon: "undo", fn: () => write("events/" + id, before) }]);
 }
 
 /* quick actions from the tiles */
