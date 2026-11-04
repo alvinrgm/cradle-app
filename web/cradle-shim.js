@@ -26,17 +26,23 @@
   };
   var COLORS = ["#C2667A", "#4F7CAC", "#5E9C76", "#B07D3A", "#7E6BB0", "#3E8E9C"];
 
-  // ---- The family key: from the link (#k=… or ?k=…) the first time, then from this phone.
+  // ---- The family key. It stays in the address as ?k=… (moved there from #k=…, since the app uses the # for its
+  // tabs), so "Add to Home Screen" saves an icon that still knows the family: on iPhone the Home Screen app gets its
+  // own storage, separate from Safari's, and only the address carries over.
+  // A new key from a link is only trusted once the server knows it: a mistyped link must not replace a good key.
+  var GOOD = LS.get("cradle.web.key", null), PREV = null;
   var FAMILY = (function () {
-    var m = /[#&?]k=([A-Za-z0-9_-]{20,100})/.exec(LOC.hash + "&" + LOC.search);
-    if (m) {
-      LS.set("cradle.web.key", m[1]);
-      var q = new URLSearchParams(LOC.search); q.delete("k");
+    var m = /[#&?]k=([A-Za-z0-9_-]{20,100})/.exec(LOC.search + "&" + LOC.hash), k = m ? m[1] : GOOD;
+    if (m && GOOD && m[1] !== GOOD) PREV = GOOD;
+    if (!GOOD && m) LS.set("cradle.web.key", m[1]);
+    if (k) {
+      var q = new URLSearchParams(LOC.search); q.set("k", k);
       var rest = LOC.hash.replace(/^#/, "").split("&").filter(function (p) { return p && !/^k=/.test(p); }).join("&");
-      H.replaceState(null, "", LOC.pathname + (q.toString() ? "?" + q : "") + (rest ? "#" + rest : ""));
+      H.replaceState(null, "", LOC.pathname + "?" + q + (rest ? "#" + rest : ""));
     }
-    return LS.get("cradle.web.key", null);
+    return k;
   })();
+  function keyWorks() { if (FAMILY && LS.get("cradle.web.key", null) !== FAMILY) LS.set("cradle.web.key", FAMILY); PREV = null; }
   var NS = FAMILY ? "cradle.web." + FAMILY.slice(0, 8) + "." : "cradle.web.none.";
 
   function rpc(name, args, opts) {
@@ -73,11 +79,32 @@
   }
   function noFamilyScreen(bad) {
     whenBody(function () {
-      if (document.querySelector(".cw-scr")) return;
-      screen("<h1>Cradle</h1><p>" + (bad ? "This family link isn't working. Ask whoever sent it for a fresh link, then open that link on this phone."
-        : "Cradle is a private family log. Open it from the family link you were sent, and it will remember this phone.") + "</p>");
+      if (bad && PREV) {
+        // A new link didn't work but this phone already had a family: keep using it.
+        try { sessionStorage.setItem("cradle.web.badlink", "1"); } catch (e) {}
+        LOC.replace(LOC.pathname + "?k=" + PREV + (LOC.hash || ""));
+        return;
+      }
+      [].forEach.call(document.querySelectorAll(".cw-scr"), function (x) { x.remove(); });
+      var d = screen("<h1>Cradle</h1><p>" + (bad ? "This family link isn't working. Ask whoever sent it for a fresh link, then open it or paste it here."
+        : "Cradle is a private family log. Open the family link you were sent, or paste it here.") + "</p>" +
+        '<input id="cwLink" placeholder="Paste your family link" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="cwOpen">Open</button>');
+      d.querySelector("#cwOpen").onclick = function () {
+        var m = /k=([A-Za-z0-9_-]{20,100})/.exec(d.querySelector("#cwLink").value);
+        if (!m) { d.querySelector("#cwLink").focus(); return; }
+        LS.del("cradle.web.key"); LOC.replace(LOC.pathname + "?k=" + m[1]);
+      };
     });
   }
+  (function badLinkNote() {
+    var flag = null; try { flag = sessionStorage.getItem("cradle.web.badlink"); sessionStorage.removeItem("cradle.web.badlink"); } catch (e) {}
+    if (flag) whenBody(function () {
+      var n = document.createElement("div"); n.setAttribute("data-cradle-web", "");
+      n.style.cssText = "position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:2147483600;background:#2B2733;color:#fff;border-radius:14px;padding:10px 14px;font:600 14px system-ui;max-width:90vw;text-align:center";
+      n.textContent = "That link didn't work, so Cradle is still showing your family's log."; document.body.appendChild(n);
+      setTimeout(function () { n.remove(); }, 6000);
+    });
+  })();
 
   // ---------------------------------------------------------------- user: who is tapping on this phone
   var ME = LS.get("cradle.web.me", null);
@@ -106,19 +133,65 @@
   function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
 
   // ---------------------------------------------------------------- db
-  // store: path -> data (null = deleted). pending: path -> {data|null, n}. Both mirrored to localStorage.
-  var store = {}, seq = 0, loaded = false, pending = LS.get(NS + "pending", {}) || {};
+  // store: path -> data (the server's copy). pending: path -> {data|null, n, ifAbsent}: taps not yet confirmed.
+  // Each queued tap has its own localStorage key (NS + "q." + path), so two tabs on one phone never overwrite each
+  // other's queue; a tab picks up the other tab's taps from `storage` events and before every send.
+  var QP = NS + "q.";
+  var store = {}, seq = 0, loaded = false, pending = {};
   var cache = LS.get(NS + "cache", null);
   if (cache && cache.docs) { store = cache.docs; seq = cache.seq || 0; }
   var listeners = [], gotServer = false, firstPull = null, badKey = false;
   var sync = { pending: 0, lastOk: 0, lastErr: null };
   window.__cradleSync = sync;
 
+  function readQueue() {
+    var found = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i); if (!k || k.indexOf(QP) !== 0) continue;
+        var v = LS.get(k, null); if (v && v.n) found[k.slice(QP.length)] = v;
+      }
+    } catch (e) {}
+    var old = LS.get(NS + "pending", null);   // a queue saved by the first build, as one object
+    if (old) { Object.keys(old).forEach(function (p) { if (!found[p]) { found[p] = old[p]; LS.set(QP + p, old[p]); } }); LS.del(NS + "pending"); }
+    return found;
+  }
+  function mergeQueue() {
+    var disk = readQueue(), changed = [];
+    Object.keys(disk).forEach(function (p) { disk[p].disk = true; if (!pending[p] || pending[p].n !== disk[p].n) { pending[p] = disk[p]; changed.push(p); } });
+    Object.keys(pending).forEach(function (p) { if (!disk[p] && pending[p].disk) { delete pending[p]; changed.push(p); } });   // sent by the other tab
+    noteSync();
+    return changed;
+  }
+  pending = readQueue(); Object.keys(pending).forEach(function (p) { pending[p].disk = true; });
+  window.addEventListener("storage", function (e) {
+    if (e.key && e.key.indexOf(QP) === 0) { var c = mergeQueue(); if (c.length) emit(c); }
+  });
   function view(path) { return Object.prototype.hasOwnProperty.call(pending, path) ? pending[path].data : store[path]; }
   function clone(d) { return d == null ? d : JSON.parse(JSON.stringify(d)); }
-  function persistCache() { if (!LS.set(NS + "cache", { seq: seq, docs: store })) console.warn("Cradle: cache didn't fit on this phone; the log is still saved online"); }
-  function persistPending() { LS.set(NS + "pending", pending); sync.pending = Object.keys(pending).length; }
-  sync.pending = Object.keys(pending).length;
+  function persistCache() {
+    if (LS.set(NS + "cache", { seq: seq, docs: store })) return;
+    // Too big for this phone's storage: keep everything except entries older than 90 days, so it still opens offline.
+    var cut = Date.now() - 90 * 864e5, slim = {};
+    Object.keys(store).forEach(function (p) { var d = store[p]; if (p.indexOf("events/") !== 0 || !d || !(d.start_at < cut)) slim[p] = d; });
+    if (!LS.set(NS + "cache", { seq: seq, docs: slim, partial: true })) { LS.del(NS + "cache"); console.warn("Cradle: offline copy didn't fit on this phone; the log is still saved online"); }
+  }
+  function qput(p, entry) {
+    pending[p] = entry; entry.disk = LS.set(QP + p, entry);
+    if (!entry.disk) console.error("Cradle: phone storage is full; this tap is kept in memory until it's sent", p);
+    noteSync();
+  }
+  function qdone(p, n) {
+    // Only clear it if it's still the copy we sent (a newer tap on the same entry, from this tab or another, stays).
+    var disk = LS.get(QP + p, null);
+    if (disk && disk.n !== n) { pending[p] = disk; noteSync(); return; }
+    if (pending[p] && pending[p].n !== n) return;
+    delete pending[p]; LS.del(QP + p); noteSync();
+  }
+  function noteSync() {
+    sync.pending = Object.keys(pending).length;
+    try { window.dispatchEvent(new Event("cradle-sync")); } catch (e) {}
+  }
 
   function docSnap(path) {
     var d = view(path);
@@ -160,7 +233,7 @@
   function pull() {
     if (!FAMILY || badKey) return Promise.resolve();
     if (pulling) return pulling;
-    var since = gotServer ? Math.max(0, seq - 25) : 0;
+    var since = gotServer ? seq : 0;
     pulling = rpc("cradle_pull", { p_key: FAMILY, p_since: since }).then(function (r) {
       var changed = [];
       if (!gotServer) {
@@ -177,13 +250,15 @@
           changed.push(x.path);
         });
       }
-      seq = Math.max(seq, r.seq || 0); gotServer = true; loaded = true; sync.lastOk = Date.now(); sync.lastErr = null;
-      persistCache();
+      var moved = (r.seq || 0) !== seq || !gotServer;
+      seq = Math.max(seq, r.seq || 0); gotServer = true; loaded = true; sync.lastOk = Date.now(); sync.lastErr = null; keyWorks();
+      if (changed.length || moved) persistCache();
+      noteSync();
       changed = changed.filter(function (p) { return !Object.prototype.hasOwnProperty.call(pending, p); });
       if (changed.length) emit(changed);
       listeners.forEach(function (l) { if (!l.live) { l.live = true; fire(l); } });
     }, function (e) {
-      sync.lastErr = e;
+      sync.lastErr = e; noteSync();
       if (e.code === "not_granted") { badKey = true; noFamilyScreen(true); }
       throw e;
     });
@@ -192,58 +267,65 @@
     return p;
   }
 
-  // Send the queue, 50 at a time. A write the database refuses is dropped (so it can't jam the queue) and reported.
+  // Send the queue, 50 at a time. A write the database refuses outright is dropped (so it can't jam the queue) and
+  // reported. A write the database skips because the other phone's copy is newer is dropped quietly; the next pull
+  // brings the newer copy.
   var pushing = null, refusedWaiters = {};
+  function wireOf(p) {
+    var e = pending[p];
+    if (e.data == null) return { path: p, del: true };
+    return e.ifAbsent ? { path: p, data: e.data, if_absent: true } : { path: p, data: e.data };
+  }
   function push() {
     if (!FAMILY || badKey) return Promise.resolve();
     if (pushing) return pushing.then(push, push);
+    mergeQueue();
     var paths = Object.keys(pending).slice(0, 50);
     if (!paths.length) return Promise.resolve();
-    var sent = {};
-    var writes = paths.map(function (p) { sent[p] = pending[p].n; return pending[p].data == null ? { path: p, del: true } : { path: p, data: pending[p].data }; });
-      // keep the exact copy we sent: a newer tap that lands mid-flight stays in the queue and isn't overwritten
-    var sentData = {}; paths.forEach(function (p) { sentData[p] = pending[p].data; });
+    var sent = {}, sentData = {};
+    var writes = paths.map(function (p) { sent[p] = pending[p].n; sentData[p] = pending[p].data; return wireOf(p); });
     pushing = rpc("cradle_push", { p_key: FAMILY, p_writes: writes, p_by: ME ? ME.id : null }).then(function (r) {
+      var skipped = (r && r.rejected) || [], back = [];
       paths.forEach(function (p) {
-        var d = sentData[p];
-        if (d == null) delete store[p]; else store[p] = d;
-        if (pending[p] && pending[p].n === sent[p]) delete pending[p];   // a newer tap on the same entry stays queued
+        if (skipped.indexOf(p) === -1) { if (sentData[p] == null) delete store[p]; else store[p] = sentData[p]; }
+        else back.push(p);
+        qdone(p, sent[p]);
       });
-      seq = Math.max(seq, (r && r.seq) || 0); sync.lastOk = Date.now(); sync.lastErr = null;
-      persistPending(); persistCache();
+      sync.lastOk = Date.now(); sync.lastErr = null; keyWorks();
+      persistCache(); noteSync();
+      if (back.length) { emit(back); pull().catch(function () {}); }
     }, function (e) {
-      sync.lastErr = e;
-      if (e.code === "invalid_argument" && paths.length > 1) {
-        // One bad entry in the batch: send them one by one so only that one is dropped.
-        var one = paths.reduce(function (ch, p) { return ch.then(function () { return pushOne(p); }); }, Promise.resolve());
-        return one;
-      }
+      sync.lastErr = e; noteSync();
+      if (e.code === "invalid_argument" && paths.length > 1)
+        return paths.reduce(function (ch, p) { return ch.then(function () { return pushOne(p); }); }, Promise.resolve());
       if (e.code === "invalid_argument") return dropRefused(paths[0], e);
       if (e.code === "not_granted") { badKey = true; noFamilyScreen(true); }
       throw e;
     });
     var p = pushing;
     p.then(function () { pushing = null; }, function () { pushing = null; });
-    return p.then(function () { if (Object.keys(pending).length) return push(); });
+    return p.then(function () { if (Object.keys(pending).length && !sync.lastErr) return push(); });
   }
   function pushOne(p) {
     if (!pending[p]) return Promise.resolve();
-    var n = pending[p].n, w = pending[p].data == null ? { path: p, del: true } : { path: p, data: pending[p].data };
-    return rpc("cradle_push", { p_key: FAMILY, p_writes: [w], p_by: ME ? ME.id : null }).then(function () {
-      if (pending[p] && pending[p].n === n) { if (w.del) delete store[p]; else store[p] = w.data; delete pending[p]; }
-      persistPending(); persistCache();
+    var n = pending[p].n, d = pending[p].data;
+    return rpc("cradle_push", { p_key: FAMILY, p_writes: [wireOf(p)], p_by: ME ? ME.id : null }).then(function (r) {
+      if (!((r && r.rejected) || []).length) { if (d == null) delete store[p]; else store[p] = d; }
+      qdone(p, n); persistCache(); sync.lastErr = null; noteSync();
     }, function (e) { if (e.code === "invalid_argument") return dropRefused(p, e); throw e; });
   }
   function dropRefused(p, e) {
     console.error("Cradle: save refused", p, e);
-    delete pending[p]; persistPending();
+    if (pending[p]) qdone(p, pending[p].n);
     emit([p]);
     (refusedWaiters[p] || []).forEach(function (f) { f(e); }); delete refusedWaiters[p];
   }
   var nTap = 0;
   function queue(path, data) {
-    pending[path] = { data: data == null ? null : clone(data), n: ++nTap + "." + Date.now() };
-    persistPending(); emit([path]);
+    // Creating the baby's profile or plan (first-time setup) must never replace one the family already has.
+    var creating = (path === "baby/profile" || path === "plan/current") && view(path) == null;
+    qput(path, { data: data == null ? null : clone(data), n: (++nTap) + "." + Date.now() + "." + Math.random().toString(36).slice(2, 6), ifAbsent: creating || undefined });
+    emit([path]);
     // Resolves once the server has it, or once it is safely queued on this phone (offline / server busy): the queue
     // keeps retrying. Rejects only when the database refuses this write outright.
     return new Promise(function (resolve, reject) {
@@ -263,8 +345,9 @@
     window.addEventListener("pagehide", function () { if (Object.keys(pending).length) push().catch(function () {}); });
     firstPull = push().catch(function () {}).then(pull);
     firstPull.catch(function () {
-      // Offline on open: show the cached copy if there is one; listeners without it get the error.
-      listeners.forEach(function (l) { if (!l.live && cache) { l.live = true; fire(l); } else if (!l.live && l.err) l.err(Object.assign(new Error("offline"), { code: "unavailable" })); });
+      // Offline on open: listeners already have the cached copy. With no cached copy, report the error and keep
+      // waiting: an empty log would look like a brand-new family and invite setting the baby up again.
+      listeners.forEach(function (l) { if (!l.live && l.err) l.err(Object.assign(new Error("offline"), { code: "unavailable" })); });
     });
   }
 
@@ -317,7 +400,7 @@
         isOwner: function () { return true; },     // nothing is locked: everyone in the family can do everything
         canEdit: function () { return true; },
         rename: function (n) { me.name = String(n || "").trim().slice(0, 40) || me.name; LS.set("cradle.web.me", me); return queue(path, { name: me.name, color: me.color, at: Date.now() }); },
-        familyLink: function () { return LOC.origin + LOC.pathname + "#k=" + FAMILY; },
+        familyLink: function () { return LOC.origin + LOC.pathname + "?k=" + FAMILY; },
         web: true
       };
     });

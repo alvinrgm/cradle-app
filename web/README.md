@@ -22,7 +22,7 @@ itself lives only in the family link. To add a family (SQL editor, or Claude wit
 insert into cradle.households (key_hash, label) values (extensions.digest('<key>', 'sha256'), '<label>');
 ```
 
-The link is `https://alvinrgm.github.io/cradle-app/#k=<key>`. Anyone with the link can read and add to that family's
+The link is `https://alvinrgm.github.io/cradle-app/?k=<key>`. Anyone with the link can read and add to that family's
 log, so send it only to the family. To cut off a leaked link, give the family a new key:
 `update cradle.households set key_hash = extensions.digest('<new key>', 'sha256') where label = '<label>';`
 

@@ -10,8 +10,10 @@ self.addEventListener("fetch", (e) => {
   const own = url.origin === location.origin && /\.(js|webmanifest)$/.test(url.pathname);
   if (page || own) {
     const key = page ? "./" : url.pathname.split("/").pop();
-    e.respondWith(fetch(req, { cache: "no-cache" }).then((r) => { if (r.ok) { const c = r.clone(); caches.open(CACHE).then((x) => x.put(key, c)); } return r; })
-      .catch(() => caches.match(key)));
+    // Network first, but a "connected, no data" dead zone must not leave a blank screen: after 3 s, serve the cached copy.
+    const net = fetch(req, { cache: "no-cache" }).then((r) => { if (r.ok) { const c = r.clone(); caches.open(CACHE).then((x) => x.put(key, c)); } return r; });
+    const slow = new Promise((res) => setTimeout(res, 3000)).then(() => caches.match(key)).then((hit) => hit || net);
+    e.respondWith(Promise.race([net.catch(() => caches.match(key).then((hit) => hit || Promise.reject(new Error("offline")))), slow]));
     return;
   }
   e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((r) => {

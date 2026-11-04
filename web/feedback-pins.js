@@ -297,11 +297,12 @@
       (mine && p.status === "open" ? '<button type="button" data-x="del">Delete</button>' : "") + "</div></div>");
     var del = sheet.querySelector('[data-x="del"]');
     if (del) del.onclick = function () {
-      api("cradle_pin_delete", { p_id: p.id }).then(function () { pins.splice(i, 1); closeSheet(); paint(); label(); },
+      api("cradle_pin_delete", { p_id: p.id, p_by: me && me.id }).then(function () { pins.splice(i, 1); closeSheet(); paint(); label(); },
         function () { sheet.querySelector(".gbp-err").textContent = "Couldn't delete it right now. Try again in a moment."; });
     };
   }
-  function openList() {
+  function openList(fresh) {
+    if (!fresh) load().then(function () { if (sheet && sheet._list) openList(true); });
     closeSheet();
     var rows = pins.map(function (p, i) { return { p: p, i: i }; }).reverse();
     var open = rows.filter(function (x) { return x.p.status === "open"; }), done = rows.filter(function (x) { return x.p.status !== "open"; });
@@ -313,7 +314,8 @@
       (todo.length ? '<div class="gbp-row"><button type="button" class="go" data-x="bulk">Mark ' + todo.length + " fixed from release notes</button></div>" : "") +
       (pins.length ? sec("Open", open) + sec("Fixed", done) : "<small>No notes yet. Tap 💬, then tap anything that\u2019s wrong, confusing or missing.</small>") +
       '<div class="gbp-err"></div><div class="gbp-row"><button type="button" data-x="close">Close</button><button type="button" data-x="reload">Refresh</button></div></div>');
-    sheet.querySelector('[data-x="reload"]').onclick = function () { load().then(openList); };
+    sheet._list = true;
+    sheet.querySelector('[data-x="reload"]').onclick = function () { openList(); };
     sheet.querySelector(".gbp-sw").onclick = function (e) { e.preventDefault(); setHidden(!hidden); };
   }
   function appVersion() { var m = document.querySelector('meta[name="cradle-version"]'); return (m && m.content) || window.CRADLE_VERSION || null; }

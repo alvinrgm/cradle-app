@@ -1,7 +1,7 @@
 -- Cradle on the web: one shared log per family, no accounts.
 -- Lives in the Gainsboard Supabase project (hvpwgqliuykzebjkejyu) in its own `cradle` schema, which the API does not
 -- expose. The browser reaches it only through the public.cradle_* functions below, and every one of them needs the
--- family's secret key (the part after #k= in the family link). Only a SHA-256 hash of the key is stored.
+-- family's secret key (the part after ?k= in the family link). Only a SHA-256 hash of the key is stored.
 create schema if not exists cradle;
 revoke all on schema cradle from public, anon, authenticated;
 
@@ -70,32 +70,44 @@ begin
 end $$;
 
 -- Everything that changed after `p_since` (a seq number; 0 = everything). Returns {seq, docs:[{path,data,deleted}]}.
+-- The returned seq (the phone's next p_since) stops short of rows written in the last 10 seconds, so a save that was
+-- still committing when this ran is fetched next time instead of being skipped. Phones get those rows twice; harmless.
 create or replace function public.cradle_pull(p_key text, p_since bigint default 0) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
-declare h uuid := cradle.household_for(p_key);
+declare h uuid := cradle.household_for(p_key); since bigint := greatest(coalesce(p_since, 0), 0);
 begin
   return jsonb_build_object(
-    'seq', coalesce((select max(seq) from cradle.docs where household_id = h), 0),
+    'seq', greatest(since, coalesce((select max(seq) from cradle.docs where household_id = h and updated_at < now() - interval '10 seconds'), 0)),
     'docs', coalesce((select jsonb_agg(jsonb_build_object('path', path, 'data', data, 'deleted', deleted) order by seq)
-                      from cradle.docs where household_id = h and seq > coalesce(p_since, 0)), '[]'::jsonb));
+                      from cradle.docs where household_id = h and seq > since), '[]'::jsonb));
 end $$;
 
--- Saves up to 100 documents at once: [{path, data}] sets, [{path, del: true}] deletes. Returns {seq}.
+-- Saves up to 100 documents at once: [{path, data}] sets, [{path, del: true}] deletes. Returns {rejected: [paths]}.
+--   * A set carrying data.updated_at older than the stored copy's is refused (an edit made offline must not overwrite
+--     a newer edit from the other phone). Deletes always apply.
+--   * {if_absent: true} only creates: it never replaces a live document (a phone that set up the baby while offline
+--     must not overwrite the family's real profile).
 create or replace function public.cradle_push(p_key text, p_writes jsonb, p_by text default null) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare h uuid := cradle.household_for(p_key); w jsonb; p text; del boolean;
+declare h uuid := cradle.household_for(p_key); w jsonb; p text; del boolean; absent boolean; n int; rejected jsonb := '[]'::jsonb;
 begin
   if jsonb_typeof(p_writes) <> 'array' or jsonb_array_length(p_writes) > 100 then raise exception 'bad writes' using errcode = '22023'; end if;
   for w in select * from jsonb_array_elements(p_writes) loop
-    p := w->>'path'; del := coalesce((w->>'del')::boolean, false);
+    p := w->>'path'; del := coalesce((w->>'del')::boolean, false); absent := coalesce((w->>'if_absent')::boolean, false);
     if p is null or length(p) > 300 or p !~ '^[A-Za-z0-9_.:@+~-]+(/[A-Za-z0-9_.:@+~-]+)+$' or p ~ '(^|/)[.]+(/|$)' then raise exception 'bad path %', left(coalesce(p, ''), 60) using errcode = '22023'; end if;
     if not del and (jsonb_typeof(w->'data') <> 'object' or length((w->'data')::text) > 65536) then raise exception 'bad data for %', p using errcode = '22023'; end if;
     insert into cradle.docs as d (household_id, path, data, deleted, updated_by)
       values (h, p, case when del then null else w->'data' end, del, left(p_by, 80))
       on conflict (household_id, path) do update set data = excluded.data, deleted = excluded.deleted,
-        seq = nextval('cradle.doc_seq'), updated_at = now(), updated_by = excluded.updated_by;
+        seq = nextval('cradle.doc_seq'), updated_at = now(), updated_by = excluded.updated_by
+      where (not absent or d.deleted)
+        and (excluded.deleted or d.deleted
+             or jsonb_typeof(d.data->'updated_at') is distinct from 'number' or jsonb_typeof(excluded.data->'updated_at') is distinct from 'number'
+             or (excluded.data->>'updated_at')::numeric >= (d.data->>'updated_at')::numeric);
+    get diagnostics n = row_count;
+    if n = 0 then rejected := rejected || to_jsonb(p); end if;
   end loop;
-  return jsonb_build_object('seq', (select max(seq) from cradle.docs where household_id = h));
+  return jsonb_build_object('rejected', rejected);
 end $$;
 
 create or replace function public.cradle_pins(p_key text) returns jsonb
@@ -116,9 +128,10 @@ begin
   return to_jsonb(r) - 'household_id';
 end $$;
 
-create or replace function public.cradle_pin_delete(p_key text, p_id bigint) returns void
+create or replace function public.cradle_pin_delete(p_key text, p_id bigint, p_by text default null) returns void
 language sql security definer set search_path = '' as $$
-  delete from cradle.pins where id = p_id and household_id = cradle.household_for(p_key) and status = 'open' $$;
+  delete from cradle.pins where id = p_id and household_id = cradle.household_for(p_key) and status = 'open'
+    and by_id is not distinct from p_by $$;
 
 -- For the cradle-ai edge function (service role only): checks the key and the daily cap, logs the call.
 create or replace function public.cradle_ai_ok(p_key text, p_cap int default 60) returns boolean
@@ -138,8 +151,8 @@ create view cradle.admin_pins as
 
 revoke all on all functions in schema cradle from public, anon, authenticated;
 revoke all on function public.cradle_pull(text, bigint), public.cradle_push(text, jsonb, text), public.cradle_pins(text),
-  public.cradle_pin_add(text, jsonb), public.cradle_pin_delete(text, bigint), public.cradle_ai_ok(text, int) from public;
+  public.cradle_pin_add(text, jsonb), public.cradle_pin_delete(text, bigint, text), public.cradle_ai_ok(text, int) from public;
 grant execute on function public.cradle_pull(text, bigint), public.cradle_push(text, jsonb, text), public.cradle_pins(text),
-  public.cradle_pin_add(text, jsonb), public.cradle_pin_delete(text, bigint) to anon, authenticated;
+  public.cradle_pin_add(text, jsonb), public.cradle_pin_delete(text, bigint, text) to anon, authenticated;
 revoke all on function public.cradle_ai_ok(text, int) from anon, authenticated;
 grant execute on function public.cradle_ai_ok(text, int) to service_role;
