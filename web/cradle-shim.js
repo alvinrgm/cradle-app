@@ -293,7 +293,7 @@
       });
       sync.lastOk = Date.now(); sync.lastErr = null; keyWorks();
       persistCache(); noteSync();
-      if (back.length) { emit(back); pull().catch(function () {}); }
+      if (back.length) { emit(back); pull().catch(function () {}); try { window.dispatchEvent(new CustomEvent("cradle-skipped", { detail: back })); } catch (e) {} }
     }, function (e) {
       sync.lastErr = e; noteSync();
       if (e.code === "invalid_argument" && paths.length > 1)

@@ -1150,6 +1150,8 @@ function updateSync() {
   el.querySelector("span").textContent = S.demo ? "Sample day" : S.backend === "local" ? "On this phone" : stuck || (waiting && !navigator.onLine) ? `${waiting} waiting to send` : S.pending || waiting ? "Saving…" : off ? "Offline, will sync" : "Saved";
 }
 window.addEventListener("cradle-sync", () => updateSync());
+// The shared log kept a newer edit from the other phone instead of this one: say so rather than silently reverting.
+window.addEventListener("cradle-skipped", e => { if ((e.detail || []).some(p => /^(events|checks)\//.test(p))) toast("Your partner changed that entry after you, so Cradle kept their version.", [], { ms: 6000 }); });
 const syncPill = () => `<span class="sync" id="sync"><i></i><span></span></span>`;
 
 /* ---------- toast with Undo / Edit ---------- */
