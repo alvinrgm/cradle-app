@@ -2,7 +2,16 @@
 
 **A baby tracker you can run with one thumb.** Cradle logs feeds, sleep and diapers with one tap from whichever hand is free, and walks you through the four phases of Suzy Giordano's *12 Hours' Sleep by 12 Weeks Old*. It runs as a private page inside your own Claude account.
 
-## Install: one paste
+## Web app (shared family log)
+
+Cradle also runs as a plain web page with a shared family database, no accounts: https://alvinrgm.github.io/cradle-app/
+
+- Each family has a private **family link** (`…/cradle-app/#k=<family key>`). Open it on each phone, type your first name once, and add it to your Home Screen.
+- Every tap is saved on the phone first and sent as soon as there's signal, so nothing is lost at 3 am in a dead zone. The other parent sees it within a few seconds.
+- Tap **💬** at the top right, then tap anything, to leave a feedback note right where the problem is.
+- How it's built: `web/` (shim, feedback notes, build script, service worker), `supabase/` (database and AI function). See `web/README.md`.
+
+## Install as a Claude Artifact: one paste
 
 Open [Claude Code](https://claude.ai/code) (web, phone or desktop) and paste this:
 

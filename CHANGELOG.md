@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0
+- Cradle also runs as a web app with a shared family database: open the family link on each phone, type your name once, no account. Every tap is saved on the phone first and sent as soon as there's signal; the other parent sees it within a few seconds.
+- Feedback notes on the web app: tap 💬, then tap anything, and leave a note right where the problem is.
+- Fixed: a save that didn't confirm (signal dropped mid-tap) was only retried the next time Cradle was opened. It now retries every 20 seconds while the app is open.
+- Fixed: retrying an old unsent save could overwrite a newer edit your partner made to the same entry.
+- Fixed: only the newest 1,000 entries loaded, so after a couple of months older days, totals and the CSV export silently lost entries.
+- Fixed: typing "bf R" logged a left-side feed with no time. It now logs the right side.
+- Typing "around 3" reads as 3 o'clock.
+
 ## 1.2.0
 - Mic button next to the type box (and on the slim button row). It opens the keyboard on the box, so one more tap on the keyboard's mic lets you say an entry like "pump 120 15 minutes" or "fed 150 bottle". Web pages can't start dictation themselves, so the keyboard's mic key is the second tap.
 - After "Add to my calendar", a sheet explains where the file was saved and how to open it on iPhone, Android or a computer.

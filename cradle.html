@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.2.0">
+<meta name="cradle-version" content="1.3.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -538,10 +538,21 @@ async function write(path, data) { // data === null deletes
     return false;
   } finally { S.pending--; updateSync(); }
 }
+let replaying = false;
 function replayOutbox() {
-  const o = outbox.all();
-  for (const [path, v] of Object.entries(o)) write(path, v.data);
+  if (replaying) return; replaying = true;
+  const o = outbox.all(), jobs = [];
+  for (const [path, v] of Object.entries(o)) {
+    // Someone (maybe the other parent) changed this entry after the queued copy was made: theirs is newer, keep it.
+    const cur = docAt(S, path), at = v.data && v.data.updated_at;
+    if (cur && at && cur.updated_at && cur.updated_at > at) { outbox.done(path); continue; }
+    jobs.push(write(path, v.data));
+  }
+  Promise.allSettled(jobs).then(() => { replaying = false; });
 }
+// A save that didn't confirm (signal dropped mid-tap) is retried while the app stays open, not only on the next open.
+setInterval(() => { if (S.ready && B.db && !S.pending && navigator.onLine !== false && Object.keys(outbox.all()).length) replayOutbox(); }, 20000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.ready && B.db && !S.pending && Object.keys(outbox.all()).length) replayOutbox(); });
 
 async function connect() {
   const [db, user, sample, downloads] = await Promise.all(["db", "user", "sample", "downloads"].map(useCap));
@@ -564,7 +575,7 @@ async function connect() {
   const onErr = e => { S.slow = true; S.ready = true; clearTimeout(slowTimer); toast("Can't reach the shared log right now. New taps are kept on this phone.", [], { error: true, ms: 7000 }); scheduleRender(); };
   db.doc("baby/profile").onSnapshot(s => { S.profile = s.exists ? s.data() : null; first("profile"); S.ver++; scheduleRender(); }, onErr);
   db.doc("plan/current").onSnapshot(s => { S.plan = s.exists ? s.data() : null; first("plan"); S.ver++; scheduleRender(); }, onErr);
-  db.collection("events").orderBy("start_at", "desc").limit(1000).onSnapshot(q => {
+  db.collection("events").orderBy("start_at", "desc").onSnapshot(q => {
     S.events = new Map(q.docs.map(d => [d.id, d.data()])); first("events"); S.ver++; scheduleRender(); loadPeople();
   }, onErr);
   db.collection("checks").onSnapshot(q => { S.checks = new Map(q.docs.map(d => [d.id, d.data()])); S.ver++; scheduleRender(); }, () => {});
@@ -973,7 +984,7 @@ function parseShorthand(text, now = Date.now()) {
     if ((m = s.match(/(\d{1,2}):(\d{2})\s*(am|pm|a|p)?\b/))) { h = +m[1]; mi = +m[2]; ap = m[3] ? m[3][0] : null; }
     else if ((m = s.match(/\b(\d{1,2})(\d{2})\s*(am|pm|a|p)?\b/))) { h = +m[1]; mi = +m[2]; ap = m[3] ? m[3][0] : null; }
     else if ((m = s.match(/\b(\d{1,2})\s*(am|pm|a|p)\b/))) { h = +m[1]; ap = m[2][0]; }
-    else if ((m = s.match(/\bat\s+(\d{1,2})\b/))) { h = +m[1]; }
+    else if ((m = s.match(/\b(?:at|around|@)\s+(\d{1,2})\b/))) { h = +m[1]; }
     else return null;
     if (h > 23 || mi > 59) return null;
     return resolveClock(h, mi, ap, now);
@@ -1030,6 +1041,8 @@ function parseShorthand(text, now = Date.now()) {
         let l = 0, r = 0; const lm = s.match(/\b(?:l|left)\s*(\d+)/), rm = s.match(/\b(?:r|right)\s*(\d+)/);
         if (lm || rm) { l = lm ? +lm[1] : 0; r = rm ? +rm[1] : 0; }
         else if (mins.length) { if (/\b(r|right)\b/.test(s)) r = mins[0]; else if (/\b(l|left)\b/.test(s)) l = mins[0]; else { l = mins[0]; r = mins[1] || 0; } }
+        else if (/\b(r|right)\b/.test(s) && !/\b(l|left)\b/.test(s)) r = 15; // "bf R": a feed on the right, length not given
+        else if (/\b(l|left)\b/.test(s) && !/\b(r|right)\b/.test(s)) l = 15;
         const total = (l + r) * MIN || 15 * MIN;
         const start = t ?? now - total;
         out.push({ type: "feed", start_at: start, end_at: start + total, feed: { kind: "breast", l_sec: l * 60, r_sec: r * 60, side: l && r ? "both" : r ? "R" : "L" } });
@@ -1679,12 +1692,15 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. Check your connection. Anything you log is kept on this phone and synced later.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
+// Running on the hosted web copy (cradle-app on GitHub Pages) rather than inside claude.ai.
+const WEB = () => !!(B.user && B.user.web);
 const newer = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
 function checkUpdate() {
+  if (WEB() || !UPDATE_URL) return; // the web copy updates itself
   try { fetch(UPDATE_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.version && newer(v.version, APP_VERSION)) { latest = v; scheduleRender(); } }).catch(() => {}); } catch {}
 }
 function banners() {
@@ -1948,7 +1964,7 @@ function viewMe() {
       ${row("feedback", "chat", "Send feedback", "")}
     </div>
     <div class="card stack"><h2 class="h3">Your data</h2>
-      <p class="sub small">No account needed. The log lives in this private page and is shared only with people you invite as editors. It holds ${esc(prof().name || "your baby")}'s details, feeds, sleep, diapers, weights and who logged each entry. Settings like your free hand stay with you. Version ${APP_VERSION}. ${S.backend === "local" ? "Right now it's saved on this phone only." : ""}</p>
+      <p class="sub small">No account needed. ${WEB() ? "The log is saved online and shared only with people who have your family link. Every tap is kept on this phone first and sent as soon as there's signal." : "The log lives in this private page and is shared only with people you invite as editors."} It holds ${esc(prof().name || "your baby")}'s details, feeds, sleep, diapers, weights and who logged each entry. Settings like your free hand stay with you. Version ${APP_VERSION}. ${S.backend === "local" ? "Right now it's saved on this phone only." : ""}</p>
       <p class="sub small">Cradle isn't medical advice. Health checks are prompts to call your pediatrician, not diagnoses.</p>
       <button type="button" class="btn quiet" data-act="wipe">${icon("trash", "s")}Delete all entries…</button></div>
   </div>`;
@@ -2175,13 +2191,23 @@ function openSetup(k) {
   const os = phoneOS();
   if (k === "reminders") return openReminders();
   if (k === "home") return openSheet("Add Cradle to your Home Screen", `
-    ${os !== "android" ? `<h3 class="h3">iPhone (Safari)</h3><ol class="steps"><li>Open this page in <b>Safari</b>. In the Claude app, tap the page's menu and choose <b>Open in browser</b> first.</li><li>Tap the <b>Share</b> button at the bottom of the screen.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>` : ""}
+    ${os !== "android" ? `<h3 class="h3">iPhone (Safari)</h3><ol class="steps"><li>Open this page in <b>Safari</b>.${WEB() ? "" : " In the Claude app, tap the page's menu and choose <b>Open in browser</b> first."}</li><li>Tap the <b>Share</b> button at the bottom of the screen.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>` : ""}
     ${os !== "ios" ? `<h3 class="h3">Android (Chrome)</h3><ol class="steps"><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu at the top right.</li><li>Tap <b>Add to Home screen</b>, then <b>Add</b>.</li></ol>` : ""}
-    <p class="sub small">The first time, you may need to sign in to Claude in that browser.</p>${doneBtn("I added it")}`, wire);
+    ${WEB() ? "" : `<p class="sub small">The first time, you may need to sign in to Claude in that browser.</p>`}${doneBtn("I added it")}`, wire);
+  if (k === "partner" && WEB()) return openSheet("Invite your partner", `
+    <p>Cradle is one shared log. Your partner (or a grandparent or night nurse) taps on their own phone, and you both see every feed, nap and diaper within a few seconds.</p>
+    <ol class="steps"><li>Tap <b>Copy family link</b> below.</li><li>Text it to them.</li><li>They open it on their phone, type their first name, and that's it. No account.</li></ol>
+    <p class="sub small">Anyone with the link can see and add to the log, so only send it to people you trust.</p>
+    <button type="button" class="btn big block" id="stCopy">${icon("copy", "s")}Copy family link</button>${doneBtn("I sent it")}`, root => { wire(root); $("#stCopy", root).onclick = () => copyText(B.user.familyLink(), "Family link copied. Text it to your partner."); });
   if (k === "partner") return openSheet("Invite your partner", `
     <p>Cradle is one shared log. Your partner (or a grandparent or night nurse) taps on their own phone, and you both see every feed, nap and diaper.</p>
     <ol class="steps"><li>Open this page on <b>claude.ai</b> on a computer or in your phone's browser.</li><li>Tap <b>Share</b> at the top of the page.</li><li>Add their email, give them <b>edit</b> access, and send. View-only access can't log.</li><li>They sign in to Claude with that email and open the link.</li><li>They pick their own free hand. Their settings don't change yours.</li></ol>
     <p class="sub small">Only people you invite can see the log. You can remove someone from the same Share menu any time.</p>${doneBtn("I invited them")}`, wire);
+  if (k === "claude" && WEB()) return openSheet("Let Claude read messy notes", `
+    <p>Simple entries like "fed 120ml 8:15" or "pee" work offline and instantly. For anything looser, Cradle asks AI to read it. Nothing to set up.</p>
+    <button type="button" class="btn big block" id="stTry">Try it now</button>`, root => {
+      $("#stTry", root).onclick = async () => { closeSheet(); markSetup("claude"); const i = $("#say"); if (i) { i.value = "ate about 4 oz around 3 then slept"; i.focus(); } toast("Tap the arrow to send it, or edit it first."); };
+    });
   if (k === "claude") return openSheet("Let Claude read messy notes", `
     <p>Simple entries like "fed 120ml 8:15" or "pee" work offline and instantly. For anything looser, Cradle asks Claude to read it, and Claude can also explain the week's pattern on the Plan tab.</p>
     <ol class="steps"><li>The first time, a box asks to let this page use Claude. Tap <b>Allow</b>.</li><li>It runs on your own Claude plan. Nothing leaves your account.</li></ol>
