@@ -9,7 +9,7 @@ Browser: web/dist/index.html = cradle.html (unchanged) + cradle-shim.js loaded f
        └─ downloads → share sheet / file download
   └─ feedback-pins.js → 💬 notes pinned to the screen (public.cradle_pin_*)
 Host: GitHub Pages from web/dist, built by web/build.mjs on every push to main (.github/workflows/pages.yml)
-Database: Supabase project hvpwgqliuykzebjkejyu, schema `cradle` (not exposed to the API; RPC functions only)
+Database: Supabase project ihspmvetqecczybtncji, schema `cradle` (not exposed to the API; RPC functions only)
 ```
 
 ## Families
@@ -39,3 +39,17 @@ log, so send it only to the family. To cut off a leaked link, give the family a 
 1. Change the app in claude-brain `apps/cradle/src`, bump `APP_VERSION` + `meta cradle-version`, run `./build.sh` and the QA in `apps/cradle/qa`.
 2. Copy `apps/cradle/index.html` here as `cradle.html`, bump `version.json`, add a CHANGELOG entry.
 3. `node web/build.mjs` must pass (it checks the versions match). Push to main: GitHub Pages deploys it.
+
+## People in a family (1.4.0)
+
+Each person has their own key, made when they open a one-time invite link (`?join=<code>`, 7 days). Invite and remove
+people in the app under Me, then Family. The family's setup key (the `households` row) still opens the log but is
+never shown in the app; use it only to make a family's first invite:
+
+```sql
+-- make the code on your own machine, store only its hash
+insert into cradle.invites (code_hash, household_id, for_name, expires_at)
+select extensions.digest('<code>', 'sha256'), id, '<first name>', now() + interval '14 days' from cradle.households where label = '<label>';
+```
+
+Send `https://alvinrgm.github.io/cradle-app/?join=<code>`. See who's in each family: `select * from cradle.admin_members`.

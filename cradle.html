@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.3.0">
+<meta name="cradle-version" content="1.4.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -1710,7 +1710,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. It opens as soon as there's signal, with everything already logged.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
@@ -1975,7 +1975,7 @@ function viewMe() {
     <div class="list">
       ${row("reminders", "bell", "Calendar reminders", planDoc().phase >= 2 ? "Feeds + bedtime" : "Bedtime")}
       ${row("setup-guide", "info", "Setup guide", "Home Screen, partner, Claude")}
-      ${row("people", "people", "Who's logging", people.length ? people.join(", ") : "Just you so far")}
+      ${row("people", "people", WEB() ? "Family" : "Who's logging", people.length ? people.join(", ") : "Just you so far")}
       ${row("export", "download", "Export log", "CSV")}
       ${row("share-day", "share", "Copy today's summary", "Text")}
       ${row("demo", "info", "Preview with a sample day", S.demo ? "On" : "Off")}
@@ -2129,7 +2129,41 @@ function openProfile() {
     $("#pSave", root).onclick = () => { const np = Object.assign({}, D().profile || {}, readProfile(root)); if (!np.name) { toast("Add a name or nickname"); $("#pName", root).focus(); return; } closeSheet(); write("baby/profile", np); toast("Saved"); };
   });
 }
+function seenAgo(t) {
+  if (!t) return "Hasn't opened it yet";
+  const m = (Date.now() - new Date(t)) / MIN;
+  return m < 10 ? "Active now" : m < 60 ? `Seen ${Math.round(m)} min ago` : m < 24 * 60 ? `Seen ${Math.round(m / 60)} h ago` : `Seen ${fmtDate(new Date(t).getTime())}`;
+}
+// The web copy: everyone in the family has their own key, so people can be invited one at a time and taken out.
+async function openFamily() {
+  const baby = prof().name || "the baby";
+  openSheet("Family", `<div id="famList" class="list"><div class="li">Loading…</div></div>
+    <button type="button" class="btn big block" id="famInvite">${icon("people", "s")}Invite someone</button>
+    <p class="sub small">Everyone here sees and adds to ${esc(baby)}'s log on their own phone, and every entry shows who logged it. Take out a phone that's lost or no longer used: it stops working right away, and what it logged stays.</p>`, async root => {
+    $("#famInvite", root).onclick = () => openSetup("partner");
+    const list = $("#famList", root);
+    const draw = f => {
+      const ms = (f && f.members) || [];
+      for (const m of ms) if (!S.people[m.id]) S.people[m.id] = { name: m.name, color: m.color, isMe: m.me };
+      list.innerHTML = ms.map(m => `<div class="li">${whoDot(m.id)}<span class="grow">${esc(m.me ? m.name + " (you)" : m.name)}<br><span class="sub small">${esc(m.me ? "This phone" : seenAgo(m.last_seen))}</span></span>${m.me ? "" : `<button type="button" class="btn ghost" data-out="${esc(m.id)}" aria-label="Take out ${esc(m.name)}">Remove</button>`}</div>`).join("")
+        || `<div class="li">Just you so far</div>`;
+      if (f && f.stale) list.insertAdjacentHTML("beforeend", `<div class="li sub small">Offline: this is the list from the last time Cradle had signal.</div>`);
+      $$("[data-out]", list).forEach(b => b.onclick = () => {
+        const m = ms.find(x => x.id === b.dataset.out);
+        openSheet(`Remove ${m.name}?`, `<p>${esc(m.name)}'s phone stops opening ${esc(baby)}'s log right away. Everything they logged stays. You can invite them again any time.</p>
+          <button type="button" class="btn danger big block" id="outGo">Remove ${esc(m.name)}</button>`, r2 => {
+          $("#outGo", r2).onclick = async () => {
+            try { await B.user.remove(m.id); closeSheet(); toast(`Removed ${m.name}`); }
+            catch { toast("Couldn't remove them just now. Check your signal and try again."); }
+          };
+        });
+      });
+    };
+    try { draw(await B.user.family()); } catch { list.innerHTML = `<div class="li">Couldn't load the family. Check your signal and try again.</div>`; }
+  });
+}
 function openPeople() {
+  if (WEB() && B.user.family) return openFamily();
   const ids = new Set(evs().map(e => e.logged_by).filter(Boolean)); if (S.me && S.me.id) ids.add(S.me.id);
   const counts = {}; for (const e of evs()) if (e.logged_by) counts[e.logged_by] = (counts[e.logged_by] || 0) + 1;
   openSheet("Who's logging", `
@@ -2212,11 +2246,27 @@ function openSetup(k) {
     ${os !== "android" ? `<h3 class="h3">iPhone (Safari)</h3><ol class="steps"><li>Open this page in <b>Safari</b>.${WEB() ? "" : " In the Claude app, tap the page's menu and choose <b>Open in browser</b> first."}</li><li>Tap the <b>Share</b> button at the bottom of the screen.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>` : ""}
     ${os !== "ios" ? `<h3 class="h3">Android (Chrome)</h3><ol class="steps"><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu at the top right.</li><li>Tap <b>Add to Home screen</b>, then <b>Add</b>.</li></ol>` : ""}
     ${WEB() ? "" : `<p class="sub small">The first time, you may need to sign in to Claude in that browser.</p>`}${doneBtn("I added it")}`, wire);
-  if (k === "partner" && WEB()) return openSheet("Invite your partner", `
+  if (k === "partner" && WEB() && B.user.invite) return openSheet("Invite your partner", `
     <p>Cradle is one shared log. Your partner (or a grandparent or night nurse) taps on their own phone, and you both see every feed, nap and diaper within a few seconds.</p>
-    <ol class="steps"><li>Tap <b>Copy family link</b> below.</li><li>Text it to them.</li><li>They open it on their phone, type their first name, and that's it. No account.</li></ol>
-    <p class="sub small">Anyone with the link can see and add to the log, so only send it to people you trust.</p>
-    <button type="button" class="btn big block" id="stCopy">${icon("copy", "s")}Copy family link</button>${doneBtn("I sent it")}`, root => { wire(root); $("#stCopy", root).onclick = () => copyText(B.user.familyLink(), "Family link copied. Text it to your partner."); });
+    <div class="field"><label for="invName">Their first name</label><input id="invName" maxlength="40" autocomplete="off" placeholder="e.g. Josh"></div>
+    <button type="button" class="btn big block" id="invMake">Make invite link</button>
+    <div id="invOut" class="stack" hidden><div class="field"><label for="invLink">Their invite link</label><input id="invLink" readonly></div>
+      <button type="button" class="btn big block" id="invCopy">${icon("copy", "s")}Copy invite link</button>
+      ${navigator.share ? `<button type="button" class="btn ghost block" id="invShare">Send it…</button>` : ""}</div>
+    <p class="sub small">Each link works once, for 7 days, and gives that one person their own access. No account. You can remove anyone later from Me, then Family.</p>${doneBtn("I sent it")}`, root => {
+    wire(root);
+    let link = "";
+    $("#invMake", root).onclick = async () => {
+      const b = $("#invMake", root), name = $("#invName", root).value.trim();
+      b.disabled = true; b.textContent = "Making the link…";
+      try {
+        link = (await B.user.invite(name)).link;
+        $("#invLink", root).value = link; $("#invOut", root).hidden = false; b.remove();
+      } catch { b.disabled = false; b.textContent = "Make invite link"; toast("Couldn't make the link just now. Check your signal and try again."); }
+    };
+    $("#invCopy", root).onclick = () => copyText(link, "Invite link copied. Text it to them.");
+    const sh = $("#invShare", root); if (sh) sh.onclick = () => navigator.share({ text: `Join ${prof().name || "our baby"}'s log on Cradle: ${link}` }).catch(() => {});
+  });
   if (k === "partner") return openSheet("Invite your partner", `
     <p>Cradle is one shared log. Your partner (or a grandparent or night nurse) taps on their own phone, and you both see every feed, nap and diaper.</p>
     <ol class="steps"><li>Open this page on <b>claude.ai</b> on a computer or in your phone's browser.</li><li>Tap <b>Share</b> at the top of the page.</li><li>Add their email, give them <b>edit</b> access, and send. View-only access can't log.</li><li>They sign in to Claude with that email and open the link.</li><li>They pick their own free hand. Their settings don't change yours.</li></ol>

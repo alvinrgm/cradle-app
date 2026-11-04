@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.0
+- Family on the web app: each person gets their own invite link (works once, for 7 days) and their own access, with no account. Invite someone from Me, then Family, or from the setup guide. The person opening it sees who invited them and types their first name.
+- Remove a lost or old phone from Me, then Family: it stops opening the log right away, and what it logged stays.
+- Who logged an entry is now stamped by the server, so it can't be mixed up between phones.
+
 ## 1.3.0
 - Cradle also runs as a web app with a shared family database: open the family link on each phone, type your name once, no account. Every tap is saved on the phone first and sent as soon as there's signal; the other parent sees it within a few seconds.
 - Feedback notes on the web app: tap 💬, then tap anything, and leave a note right where the problem is.

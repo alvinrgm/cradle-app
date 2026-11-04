@@ -1,6 +1,6 @@
 {
-  "version": "1.3.0",
-  "notes": "Save fixes: entries that didn't confirm are retried while the app is open, a stale retry no longer overwrites your partner's newer edit, and logs past 1,000 entries no longer drop old days. Typed \"bf R\" now credits the right side, and \"around 3\" reads as a time.",
+  "version": "1.4.0",
+  "notes": "Family: each parent gets their own invite link and their own access. Invite someone from Me, then Family; remove a lost phone there too. Every entry shows who logged it.",
   "capabilities": {
     "db": {
       "rules": [

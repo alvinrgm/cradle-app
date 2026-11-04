@@ -14,8 +14,8 @@
 (function () {
   "use strict";
   var CFG = {
-    url: "https://hvpwgqliuykzebjkejyu.supabase.co",
-    key: "sb_publishable_xmdWIGrbkSc8xXy_XVpdSQ_jORvUJb8",
+    url: "https://ihspmvetqecczybtncji.supabase.co",
+    key: "sb_publishable_JDptpLqx29t6fgTQqXgJaQ_mWWfhTny",
     pullMs: 4000
   };
   var H = window.history, LOC = window.location;
@@ -30,8 +30,9 @@
   // tabs), so "Add to Home Screen" saves an icon that still knows the family: on iPhone the Home Screen app gets its
   // own storage, separate from Safari's, and only the address carries over.
   // A new key from a link is only trusted once the server knows it: a mistyped link must not replace a good key.
+  var JOIN = (/[#&?]join=([A-Za-z0-9_-]{20,100})/.exec(LOC.search + "&" + LOC.hash) || [])[1] || null;
   var GOOD = LS.get("cradle.web.key", null), PREV = null;
-  var FAMILY = (function () {
+  var FAMILY = JOIN ? null : (function () {
     var m = /[#&?]k=([A-Za-z0-9_-]{20,100})/.exec(LOC.search + "&" + LOC.hash), k = m ? m[1] : GOOD;
     if (m && GOOD && m[1] !== GOOD) PREV = GOOD;
     if (!GOOD && m) LS.set("cradle.web.key", m[1]);
@@ -55,7 +56,7 @@
         var body = null; try { body = t ? JSON.parse(t) : null; } catch (e) { body = t; }
         if (r.ok) return body;
         var err = new Error((body && body.message) || ("HTTP " + r.status));
-        err.status = r.status; err.pg = body && body.code;
+        err.status = r.status; err.pg = body && body.code; err.hint = body && body.hint;
         // 28000: the family key isn't known (link mistyped, or the family was removed). 22023/23xxx/54000: the database
         // refused this exact write. Anything else (5xx, 429, network): try again later.
         err.code = err.pg === "28000" ? "not_granted" : (/^(22|23|54)/.test(err.pg || "") ? "invalid_argument" : "unavailable");
@@ -77,8 +78,15 @@
     var d = document.createElement("div"); d.className = "cw-scr"; d.setAttribute("data-cradle-web", ""); d.innerHTML = STYLE + html;
     document.body.appendChild(d); return d;
   }
-  function noFamilyScreen(bad) {
+  function noFamilyScreen(bad, removed) {
     whenBody(function () {
+      if (removed) {
+        // Someone in the family took this phone out (lost phone, or a phone being given away). Forget the key.
+        LS.del("cradle.web.key"); LS.del(NS + "me");
+        [].forEach.call(document.querySelectorAll(".cw-scr"), function (x) { x.remove(); });
+        screen("<h1>Cradle</h1><p>This phone was removed from the family's log. To use it again, ask your partner to send you a new invite from Cradle (Me, then Family).</p>");
+        return;
+      }
       if (bad && PREV) {
         // A new link didn't work but this phone already had a family: keep using it.
         try { sessionStorage.setItem("cradle.web.badlink", "1"); } catch (e) {}
@@ -107,11 +115,29 @@
   })();
 
   // ---------------------------------------------------------------- user: who is tapping on this phone
-  var ME = LS.get("cradle.web.me", null);
+  // A person who joined by invite is known to the server (their own key), so their name comes from there. Someone on
+  // the family's setup key types a name once, as before. Kept per family, so a second family on this phone is separate.
+  var ME = LS.get(NS + "me", null) || LS.get("cradle.web.me", null);
   if (ME && !ME.id) ME = null;
+  var FAM = LS.get(NS + "family", null);   // last known {me, baby, members}
+  function saveMe(m) { ME = m; LS.set(NS + "me", m); }
+  function colorFor(id) { return COLORS[Math.abs(hash(String(id))) % COLORS.length]; }
+  var famReq = null;
+  function loadFamily() {
+    if (!FAMILY) return Promise.reject(new Error("no family"));
+    return (famReq = rpc("cradle_family", { p_key: FAMILY }).then(function (f) {
+      FAM = f; LS.set(NS + "family", f);
+      if (f.me) saveMe({ id: f.me.id, name: f.me.name, color: f.me.color || colorFor(f.me.id), member: true });
+      return f;
+    }, function (e) {
+      if (e.code === "not_granted") { badKey = true; noFamilyScreen(true, e.hint === "removed"); }
+      throw e;
+    }));
+  }
   var asking = null;
   function askName() {
     if (ME && ME.name) return Promise.resolve(ME);
+    if (FAM && FAM.me) { saveMe({ id: FAM.me.id, name: FAM.me.name, color: FAM.me.color || colorFor(FAM.me.id), member: true }); return Promise.resolve(ME); }
     if (asking) return asking;
     return (asking = new Promise(function (resolve) {
       whenBody(function () {
@@ -123,7 +149,7 @@
           var n = i.value.trim(); if (!n) { i.focus(); return; }
           var id = (ME && ME.id) || "p_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
           ME = { id: id, name: n.slice(0, 40), color: COLORS[Math.abs(hash(id)) % COLORS.length] };
-          LS.set("cradle.web.me", ME); d.remove(); resolve(ME);
+          saveMe(ME); d.remove(); resolve(ME);
         }
         go.onclick = done; i.onkeydown = function (e) { if (e.key === "Enter") done(); };
         setTimeout(function () { i.focus(); }, 50);
@@ -259,7 +285,7 @@
       listeners.forEach(function (l) { if (!l.live) { l.live = true; fire(l); } });
     }, function (e) {
       sync.lastErr = e; noteSync();
-      if (e.code === "not_granted") { badKey = true; noFamilyScreen(true); }
+      if (e.code === "not_granted") { badKey = true; noFamilyScreen(true, e.hint === "removed"); }
       throw e;
     });
     var p = pulling;
@@ -299,7 +325,7 @@
       if (e.code === "invalid_argument" && paths.length > 1)
         return paths.reduce(function (ch, p) { return ch.then(function () { return pushOne(p); }); }, Promise.resolve());
       if (e.code === "invalid_argument") return dropRefused(paths[0], e);
-      if (e.code === "not_granted") { badKey = true; noFamilyScreen(true); }
+      if (e.code === "not_granted") { badKey = true; noFamilyScreen(true, e.hint === "removed"); }
       throw e;
     });
     var p = pushing;
@@ -385,24 +411,90 @@
 
   // ---------------------------------------------------------------- user
   function makeUser() {
-    return askName().then(function (me) {
+    // Ask the server who this key belongs to. Offline, use what this phone last knew (and ask for a name only if it
+    // never knew one).
+    var known = ME && ME.name ? Promise.resolve() : null;
+    var fam = loadFamily().catch(function () {});
+    return (known ? Promise.race([fam, new Promise(function (r) { setTimeout(r, 1500); })]) : fam).then(askName).then(function (me) {
       // Publish this phone's name so the other parent sees "Michelle" rather than "Someone".
       var path = "people/" + me.id, cur = view(path);
       if (!cur || cur.name !== me.name || cur.color !== me.color) queue(path, { name: me.name, color: me.color, at: Date.now() });
+      function inviteLink(code) { return LOC.origin + LOC.pathname + "?join=" + code; }
       return {
         id: function () { return Promise.resolve(me.id); },
         me: function () { return Promise.resolve({ id: me.id, name: me.name, color: me.color }); },
         profiles: function (ids) {
           var out = {};
-          (ids || []).forEach(function (id) { var p = view("people/" + id); out[id] = { name: (p && p.name) || "", color: p && p.color, isMe: id === me.id }; });
+          (ids || []).forEach(function (id) {
+            var p = view("people/" + id), m = FAM && (FAM.members || []).filter(function (x) { return x.id === id; })[0];
+            out[id] = { name: (m && m.name) || (p && p.name) || "", color: (p && p.color) || (m && m.color), isMe: id === me.id };
+          });
           return Promise.resolve(out);
         },
         isOwner: function () { return true; },     // nothing is locked: everyone in the family can do everything
         canEdit: function () { return true; },
-        rename: function (n) { me.name = String(n || "").trim().slice(0, 40) || me.name; LS.set("cradle.web.me", me); return queue(path, { name: me.name, color: me.color, at: Date.now() }); },
-        familyLink: function () { return LOC.origin + LOC.pathname + "?k=" + FAMILY; },
+        rename: function (n) {
+          me.name = String(n || "").trim().slice(0, 40) || me.name; saveMe(me);
+          if (me.member) rpc("cradle_rename", { p_key: FAMILY, p_name: me.name }).catch(function () {});
+          return queue(path, { name: me.name, color: me.color, at: Date.now() });
+        },
+        // The family: [{id, name, color, me, last_seen, joined}]. Offline: the last list this phone saw.
+        family: function () {
+          return loadFamily().then(function (f) { return f; }, function (e) { if (FAM) return Object.assign({ stale: true }, FAM); throw e; });
+        },
+        // A one-time invite link for one person (7 days). Each person gets their own key when they open it.
+        invite: function (name) {
+          return rpc("cradle_invite", { p_key: FAMILY, p_name: name || null }).then(function (r) { return { link: inviteLink(r.code), expires_at: r.expires_at }; });
+        },
+        remove: function (id) { return rpc("cradle_remove", { p_key: FAMILY, p_member: id }).then(function () { return loadFamily(); }); },
+        familyLink: function () { return null; },   // personal keys are never shared; use invite()
         web: true
       };
+    });
+  }
+
+  // ---------------------------------------------------------------- joining by invite (?join=CODE)
+  function joinScreen() {
+    whenBody(function () {
+      var d = screen('<h1 id="cwJh">Opening your invite…</h1><p id="cwJp"></p>' +
+        '<input id="cwName" maxlength="40" autocomplete="given-name" placeholder="Your first name" enterkeyhint="go" hidden>' +
+        '<button type="button" id="cwGo" hidden>Join</button><button type="button" id="cwBack" hidden>Open your family\'s log</button>');
+      var h = d.querySelector("#cwJh"), p = d.querySelector("#cwJp"), i = d.querySelector("#cwName"), go = d.querySelector("#cwGo"), back = d.querySelector("#cwBack");
+      function bad(why) {
+        h.textContent = why === "used" ? "This invite was already used" : why === "expired" ? "This invite has expired" : "This invite link isn't working";
+        p.textContent = "Invites work once, for 7 days. Ask whoever sent it to make a new one in Cradle (Me, then Family).";
+        i.hidden = go.hidden = true;
+        if (GOOD) { back.hidden = false; back.onclick = function () { LOC.replace(LOC.pathname + "?k=" + GOOD); }; }
+      }
+      function load() {
+        rpc("cradle_invite_info", { p_code: JOIN }).then(function (r) {
+          if (!r || !r.ok) return bad(r && r.why);
+          var baby = r.baby || "the baby";
+          h.textContent = r.by ? r.by + " invited you to " + baby + "'s log" : "Join " + baby + "'s log";
+          p.textContent = "Cradle is one shared log of feeds, sleep and diapers. Type your first name and you're in. No account needed.";
+          i.hidden = go.hidden = false; if (r.for_name) i.value = r.for_name; setTimeout(function () { i.focus(); }, 50);
+        }, function () {
+          h.textContent = "No connection"; p.textContent = "Joining needs signal once. Try again when you're online.";
+          go.hidden = false; go.textContent = "Try again"; go.onclick = function () { go.hidden = true; go.textContent = "Join"; go.onclick = join; load(); };
+        });
+      }
+      function join() {
+        var n = i.value.trim(); if (!n) { i.focus(); return; }
+        go.disabled = true; go.textContent = "Joining…";
+        var id0 = "j" + Date.now();
+        rpc("cradle_join", { p_code: JOIN, p_name: n, p_color: colorFor(id0) }).then(function (r) {
+          LS.set("cradle.web.key", r.key);
+          var ns = "cradle.web." + r.key.slice(0, 8) + ".";
+          LS.set(ns + "me", { id: r.me.id, name: r.me.name, color: r.me.color || colorFor(r.me.id), member: true });
+          LOC.replace(LOC.pathname + "?k=" + r.key);
+        }, function (e) {
+          go.disabled = false; go.textContent = "Join";
+          if (e.code === "not_granted") return bad(e.hint);
+          p.textContent = "Couldn't join just now. Check your signal and tap Join again.";
+        });
+      }
+      go.onclick = join; i.onkeydown = function (e) { if (e.key === "Enter") join(); };
+      load();
     });
   }
 
@@ -446,6 +538,7 @@
   window.claude = {
     use: function (name) {
       if (made[name]) return made[name];
+      if (JOIN) { if (!made.__join) { made.__join = 1; joinScreen(); } return (made[name] = new Promise(function () {})); }
       if (!FAMILY) { noFamilyScreen(false); return (made[name] = new Promise(function () {})); }   // waits on the "open your link" screen
       var p;
       if (name === "db") { startSync(); p = Promise.resolve(DB); }
@@ -456,7 +549,7 @@
       return (made[name] = p);
     }
   };
-  window.CradleWeb = { family: FAMILY, me: function () { return ME; }, rpc: rpc, sync: sync, push: push, pull: pull, ns: NS };
+  window.CradleWeb = { family: FAMILY, join: JOIN, me: function () { return ME; }, members: function () { return FAM; }, rpc: rpc, sync: sync, push: push, pull: pull, ns: NS };
 
   // Feedback notes (tap anything, leave a note): loaded for everyone in a family.
   if (FAMILY) whenBody(function () {

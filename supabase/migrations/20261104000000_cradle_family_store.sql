@@ -1,5 +1,5 @@
 -- Cradle on the web: one shared log per family, no accounts.
--- Lives in the Gainsboard Supabase project (hvpwgqliuykzebjkejyu) in its own `cradle` schema, which the API does not
+-- Lives in the magellan Supabase project (ihspmvetqecczybtncji) in its own `cradle` schema, which the API does not
 -- expose. The browser reaches it only through the public.cradle_* functions below, and every one of them needs the
 -- family's secret key (the part after ?k= in the family link). Only a SHA-256 hash of the key is stored.
 create schema if not exists cradle;

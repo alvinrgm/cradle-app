@@ -1,6 +1,5 @@
 // Cradle AI: the server side of the web app's `sample(prompt)` / `sample.json(prompt)` calls (reading messy typed
-// notes, explaining the day's pattern). Holds the model key (secret GEMINI_API_KEY, shared with Gainsboard's coach in
-// this project), only answers calls that carry a known family key, and caps each family per day.
+// notes, explaining the day's pattern). Holds the model key (secret GEMINI_API_KEY), only answers calls that carry a known family key, and caps each family per day.
 // Deploy with verify_jwt = false: callers have no account, the family key is the check.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
