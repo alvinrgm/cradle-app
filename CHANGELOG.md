@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1
+- Opening Cradle in a new browser or from a new Home Screen icon no longer asks "Who's this?" when you joined by invite.
+- Each person who joins gets a colour nobody in the family has yet.
+- The feedback note buttons hide while a sheet or a top message is open, so they no longer cover the close button or Undo.
+- "1 nap", not "1 naps". A sleep shorter than 5 minutes doesn't count as a nap.
+
 ## 1.4.0
 - Family on the web app: each person gets their own invite link (works once, for 7 days) and their own access, with no account. Invite someone from Me, then Family, or from the setup guide. The person opening it sees who invited them and types their first name.
 - Remove a lost or old phone from Me, then Family: it stops opening the log right away, and what it logged stays.

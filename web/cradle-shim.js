@@ -135,8 +135,12 @@
     }));
   }
   var asking = null;
+  var famTried = false;
   function askName() {
     if (ME && ME.name) return Promise.resolve(ME);
+    // A fresh browser (a new Home Screen icon has its own storage) doesn't know this phone's person yet: ask the server
+    // first, so someone who joined by invite is never asked "Who's this?". Offline, fall through to asking.
+    if (FAMILY && !famTried) { famTried = true; return (famReq || loadFamily()).catch(function () {}).then(askName); }
     if (FAM && FAM.me) { saveMe({ id: FAM.me.id, name: FAM.me.name, color: FAM.me.color || colorFor(FAM.me.id), member: true }); return Promise.resolve(ME); }
     if (asking) return asking;
     return (asking = new Promise(function (resolve) {
@@ -454,6 +458,7 @@
   }
 
   // ---------------------------------------------------------------- joining by invite (?join=CODE)
+  var INFO = null;
   function joinScreen() {
     whenBody(function () {
       var d = screen('<h1 id="cwJh">Opening your invite…</h1><p id="cwJp"></p>' +
@@ -469,6 +474,7 @@
       function load() {
         rpc("cradle_invite_info", { p_code: JOIN }).then(function (r) {
           if (!r || !r.ok) return bad(r && r.why);
+          INFO = r;
           var baby = r.baby || "the baby";
           h.textContent = r.by ? r.by + " invited you to " + baby + "'s log" : "Join " + baby + "'s log";
           p.textContent = "Cradle is one shared log of feeds, sleep and diapers. Type your first name and you're in. No account needed.";
@@ -481,8 +487,9 @@
       function join() {
         var n = i.value.trim(); if (!n) { i.focus(); return; }
         go.disabled = true; go.textContent = "Joining…";
-        var id0 = "j" + Date.now();
-        rpc("cradle_join", { p_code: JOIN, p_name: n, p_color: colorFor(id0) }).then(function (r) {
+        var taken = (INFO && INFO.taken) || [], free = COLORS.filter(function (c) { return taken.indexOf(c) < 0; });
+        var pick = (free.length ? free : COLORS)[Math.floor(Math.random() * (free.length || COLORS.length))];
+        rpc("cradle_join", { p_code: JOIN, p_name: n, p_color: pick }).then(function (r) {
           LS.set("cradle.web.key", r.key);
           var ns = "cradle.web." + r.key.slice(0, 8) + ".";
           LS.set(ns + "me", { id: r.me.id, name: r.me.name, color: r.me.color || colorFor(r.me.id), member: true });

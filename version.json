@@ -1,6 +1,6 @@
 {
-  "version": "1.4.0",
-  "notes": "Family: each parent gets their own invite link and their own access. Invite someone from Me, then Family; remove a lost phone there too. Every entry shows who logged it.",
+  "version": "1.4.1",
+  "notes": "Opening Cradle from a new Home Screen icon no longer asks your name again; each person gets their own colour; note buttons stay out of the way of sheets; naps under 5 minutes don't count.",
   "capabilities": {
     "db": {
       "rules": [

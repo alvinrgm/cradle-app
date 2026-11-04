@@ -109,6 +109,7 @@
   function css() {
     return '<style>[' + LAYER + '] *{box-sizing:border-box;font-family:var(--sans,system-ui,-apple-system,sans-serif)}' +
       '.gbp-btn{position:fixed;right:12px;top:calc(46px + env(safe-area-inset-top,0px));z-index:2147483000;height:36px;min-width:36px;padding:0 10px;border-radius:20px;border:1px solid var(--line,#EDE6DC);background:color-mix(in oklab,var(--card,#fff) 85%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--ink,#2B2733);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 8px rgb(0 0 0 / .12);cursor:pointer;opacity:.9}' +
+      'body:has(#sheet.show) .gbp-btn:not(.on),body:has(.toast.top.show) .gbp-btn:not(.on){display:none}' +
       '.gbp-btn.on{background:#ef4444;border-color:#ef4444;color:#fff}.gbp-list{right:54px;font-size:12px;font-weight:600}.gbp-btn.on{opacity:1}' +
       '.gbp-hint{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:2147483000;background:#ef4444;color:#fff;border-radius:999px;padding:8px 14px;font:600 13px system-ui;box-shadow:0 2px 10px rgb(0 0 0 / .3)}' +
       '.gbp-dot{position:fixed;z-index:2147482999;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#ef4444;color:#fff;font:700 12px/26px system-ui;text-align:center;border:2px solid #fff;box-shadow:0 2px 8px rgb(0 0 0 / .4);cursor:pointer}' +

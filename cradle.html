@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.4.0">
+<meta name="cradle-version" content="1.4.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -730,7 +730,7 @@ function totals(a, b, now = Date.now()) {
     } else if (e.type === "sleep") {
       const ov = overlap(e.start_at, e.end_at ?? now, a, Math.min(b, now));
       if (ov > 0) t.sleepMs += ov;
-      if (e.start_at >= a && e.start_at < b) t.naps++;
+      if (e.start_at >= a && e.start_at < b && (e.end_at == null || e.end_at - e.start_at >= 5 * MIN)) t.naps++;
     }
   }
   return t;
@@ -796,7 +796,7 @@ function dayStats(ds) {
     ds, de, bed, events: all.filter(e => e.start_at >= ds), feeds: fs, dayFeeds: dayF, nightFeeds: nightF,
     ml: fs.reduce((s, e) => s + ((e.feed && e.feed.kind !== "breast" && e.feed.ml) || 0), 0),
     breastMin: fs.reduce((s, e) => s + (e.feed && e.feed.kind === "breast" ? breastSec(e).total / 60 : 0), 0),
-    bottles, gap: avgGap(dayF), daySleep, naps: sl.filter(x => x.raw.start_at >= ds && x.raw.start_at < bed - HR).length,
+    bottles, gap: avgGap(dayF), daySleep, naps: sl.filter(x => x.raw.start_at >= ds && x.raw.start_at < bed - HR && (x.raw.end_at == null || x.raw.end_at - x.raw.start_at >= 5 * MIN)).length,
     sleeps: sl, longestNight: stretches.length ? Math.max(...stretches) : 0, nightWakings: Math.max(0, nightSl.length - 1),
     downAt: firstDown ? firstDown.raw.start_at : null,
     pee: all.filter(e => e.type === "diaper" && e.start_at >= ds && e.diaper && e.diaper.pee).length,
@@ -1580,7 +1580,7 @@ function daySummaryText(ds) {
   lines.push(`${p.name || "Baby"} · ${fmtDay(ds)} (${fmtTime(ds)} to ${fmtTime(st.de)})`);
   lines.push(`Fed: ${st.feeds.length} feeds${st.ml ? `, ${fmtVol(st.ml)} by bottle` : ""}${st.breastMin ? `, ${Math.round(st.breastMin)} min breast` : ""}`);
   lines.push(`Diapers: ${st.pee} pee, ${st.poop} poop`);
-  lines.push(`Day sleep: ${fmtDur(st.daySleep)} over ${st.naps} naps`);
+  lines.push(`Day sleep: ${fmtDur(st.daySleep)} over ${st.naps} ${st.naps === 1 ? "nap" : "naps"}`);
   if (st.longestNight) lines.push(`Night: longest stretch ${fmtDur(st.longestNight)}, ${st.nightWakings} wakings, ${st.nightFeeds.length} night feeds`);
   lines.push("");
   for (const e of st.events) lines.push(`${fmtTime(e.start_at)}  ${evLabel(e)}${e.note ? ` (${e.note})` : ""}`);
@@ -1710,7 +1710,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. It opens as soon as there's signal, with everything already logged.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
@@ -1765,7 +1765,7 @@ function viewToday() {
     <div class="stats">
       <button type="button" class="stat feed" data-go="log"><b class="num">${t.ml ? fmtVol(t.ml) : t.feeds}</b><span>${t.ml ? `fed · ${t.feeds} feed${t.feeds === 1 ? "" : "s"}` : `feed${t.feeds === 1 ? "" : "s"} today`}${t.breastMin ? ` · ${Math.round(t.breastMin)}m breast` : ""}</span></button>
       <button type="button" class="stat diaper" data-go="log"><b class="num">${t.pee} · ${t.poop}</b><span>pee · poop</span></button>
-      <button type="button" class="stat sleep" data-go="log"><b class="num">${fmtDur(overlapSleep(ds, Math.min(bed, now), now))}</b><span>day sleep · ${t.naps} naps</span></button>
+      <button type="button" class="stat sleep" data-go="log"><b class="num">${fmtDur(overlapSleep(ds, Math.min(bed, now), now))}</b><span>day sleep · ${t.naps} ${t.naps === 1 ? "nap" : "naps"}</span></button>
     </div>
     ${tonight}
     ${scheduleCard(ds, now, ph)}
@@ -1862,7 +1862,7 @@ function viewLog() {
     <div class="stats">
       <div class="stat feed"><b class="num">${st.ml ? fmtVol(st.ml) : st.feeds.length}</b><span>${st.ml ? "by bottle" : "feeds"} · ${st.feeds.length} feeds</span></div>
       <div class="stat diaper"><b class="num">${st.pee} · ${st.poop}</b><span>pee · poop</span></div>
-      <div class="stat sleep"><b class="num">${fmtDur(st.daySleep)}</b><span>day sleep · ${st.naps} naps</span></div>
+      <div class="stat sleep"><b class="num">${fmtDur(st.daySleep)}</b><span>day sleep · ${st.naps} ${st.naps === 1 ? "nap" : "naps"}</span></div>
     </div>
     ${(() => { const ps = st.events.filter(e => e.type === "pump" && e.end_at != null && e.pump && e.pump.ml); return ps.length ? `<p class="sub small">Pumped ${esc(fmtVol(ps.reduce((a, e) => a + e.pump.ml, 0)))} in ${ps.length} session${ps.length === 1 ? "" : "s"}.</p>` : ""; })()}
     ${st.gap || st.longestNight ? `<p class="sub small">${st.gap ? `Average gap between day feeds ${fmtDur(st.gap)}. ` : ""}${st.longestNight ? `Longest night stretch ${fmtDur(st.longestNight)}, ${st.nightWakings} wakings.` : ""}</p>` : ""}
