@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0
+- Calmer screens, same layout. Four text sizes instead of nine, colour only on the dots and the main buttons, and the "Cradle tip" / "From the book" chips are now a short grey line.
+- The bottom bar is about a third shorter: the Feed, Sleep and Diaper buttons are 76 px tall instead of 140, and every button is still at least 44 px. Today now shows the totals, pumping and the book tip without scrolling.
+- The pumping card reads "110 ml pumped today" over "1 session · last 3:40 am".
+
 ## 1.5.3
 - Logging by voice: the message at the top shows what Cradle heard and what it logged, for example: Heard "pumped 4 ounces" → Pumped 118 ml. Undo is right there if it misheard.
 

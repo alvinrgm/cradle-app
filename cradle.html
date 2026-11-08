@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.5.3">
+<meta name="cradle-version" content="1.6.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -372,6 +372,75 @@ html.night .setup .tick.on{color:var(--bg)}
 .sched .slot.done{background:var(--diaper-soft);border-color:transparent;color:var(--diaper-ink)}
 .sched .slot.next{border-color:var(--plan);color:var(--plan-ink)}
 .sched .slot.due{background:var(--plan);border-color:var(--plan);color:var(--bg)}
+</style>
+<style>
+/* Calm pass (1.6.0), from Polaris's design rules: four text sizes (13 / 15 / 17 + one display number),
+   one grey line per idea, colour only on dots and the main action, no label chips, a shorter dock.
+   Tap targets stay 44px or more; Undo stays the only confirmation. Layout and order are unchanged. */
+body{font-size:15px}
+.view{padding-block:var(--sp3) calc(var(--dock-h) + 84px)}
+.stack{gap:10px}
+.topbar{margin-bottom:var(--sp3)}
+.eyebrow{font-size:12px;letter-spacing:.04em}
+.h1{font-size:26px}
+.card{padding:14px 16px;border-radius:16px}
+.small,.sub{font-size:13px}
+.lbl{font-size:13px;color:var(--sub);font-weight:500}
+.hero{gap:4px}
+.hero .eyebrow{text-transform:none;letter-spacing:0;font-size:13px;font-weight:600}
+.hero .big{font-size:40px}
+.hero .meter{height:4px;margin:6px 0 2px}
+.stats{gap:8px}
+.stat{padding:10px 12px;border-radius:14px}
+.stat b{font-size:17px}
+.stat.feed b,.stat.diaper b,.stat.sleep b{color:var(--ink)}
+.stat span{font-size:12px;line-height:1.3}
+.pumpcard{padding:8px 8px 8px 14px}
+.pumpcard .badge{width:28px;height:28px}
+.pumpcard .badge .ic{width:16px;height:16px}
+.pumpcard .btn{min-height:44px;font-size:15px;padding:0 16px;border-radius:22px}
+.advice{gap:4px}
+.advice p{font-size:15px}
+.okline{font-size:13px;padding:10px 14px}
+.banner{font-size:13px;padding:8px 12px}
+.list,.timeline{font-size:15px}
+.tl{padding:8px 0;min-height:44px}
+.tl .t{width:60px;font-size:13px}
+.dot{width:8px;height:8px}
+.card > .row > .h3{font-size:15px}
+.h3{font-size:15px}
+.link{font-size:14px}
+.li{min-height:52px;padding:10px 14px}
+.badge{width:32px;height:32px}
+.badge .ic{width:18px;height:18px}
+/* dock: same three tiles, chips and type box, about 40% shorter */
+.dock{gap:8px;padding-top:6px;padding-bottom:8px;bottom:calc(60px + env(safe-area-inset-bottom, 0px))}
+.typebox input{height:48px;border-width:1px;font-size:16px}
+.sendbtn,.micbtn{width:48px;height:48px}
+.micbtn{border-width:1px}
+.chip{height:44px;padding:0 12px;border:0;font-size:14px}
+.swap{height:44px;border-radius:22px;font-size:14px}
+.chip,.swap{border-radius:22px}
+.tiles{gap:8px}
+.tile,.dock:not(.mini) .tile{min-height:84px;padding:10px 6px;gap:2px;border-radius:20px}
+.tile .ring{width:36px;height:36px}
+.tile .ring .ic{width:20px;height:20px}
+.tile b{font-size:15px}
+.tile span{font-size:12px}
+.tile .nextside{font-size:11px;padding:1px 6px;margin-top:0}
+.tilewrap .more{width:44px;height:36px;top:0;right:0}
+.dockgrip{height:20px;margin:-4px 0 -2px}
+.tabs{padding-top:2px;padding-bottom:calc(2px + env(safe-area-inset-bottom, 0px))}
+.tab{height:54px;font-size:11px;gap:2px}
+.tabic{height:28px}
+.toast{min-height:52px;border-radius:16px;bottom:calc(var(--dock-h) + 70px + env(safe-area-inset-bottom, 0px))}
+.toast .msg{font-size:14px}
+.toast button{min-height:44px}
+.tile,.dock:not(.mini) .tile{min-height:76px;padding:8px 6px}
+.tile .ring{width:28px;height:28px}
+.tile .ring .ic{width:16px;height:16px}
+.typebox input:focus{outline:0;border-color:var(--focus)}
+.pumpcard .grow{line-height:1.3}
 </style>
 
 <div id="app">
@@ -1745,7 +1814,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. It opens as soon as there's signal, with everything already logged.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.5.3";
+const APP_VERSION = "1.6.0";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
@@ -1783,11 +1852,11 @@ function viewToday() {
     else {
       const frac = lf && nf.at > lf.start_at ? Math.min(1, (now - lf.start_at) / (nf.at - lf.start_at)) : 0;
       next = `<div class="meter" role="img" aria-label="Time toward next feed"><i style="width:${Math.round(frac * 100)}%;background:var(--feed)"></i></div>
-        <p class="small">Next feed around <b>${fmtTime(nf.at)}</b> · ${esc(nf.text)}${nf.src === "book" ? ' <span class="tag book">Book</span>' : ""}</p>`;
+        <p class="small">Next feed around <b>${fmtTime(nf.at)}</b> <span class="sub">· ${esc(nf.text)}</span></p>`;
     }
   }
   const nap = napWindow(now);
-  if (nap && !night) next += `<p class="small">Nap window ${esc(fmtTime(nap.from))} to ${esc(fmtTime(nap.to))} <span class="tag tip">Cradle tip</span> <span class="sub">About ${nap.lo} to ${nap.hi} min awake at this age</span></p>`;
+  if (nap && !night) next += `<p class="small">Nap window ${esc(fmtTime(nap.from))} to ${esc(fmtTime(nap.to))} <span class="sub">· Cradle tip</span></p>`;
   const phase = PHASES[ph - 1];
   const tip = night ? (ph <= 2 ? ["book", pr("Don't hold back night feeds yet. If he's hungry, feed him.")] : ["book", "Fade one night feed at a time. A hungry, crying baby still gets fed."]) : [phase.book[0] ? "book" : "tip", `${phase.book[1] ? phase.book[1][0] : phase.book[0][0]}. ${phase.book[1] ? phase.book[1][1] : phase.book[0][1]}`];
   const tonight = night ? nightLog(bed, now) : "";
@@ -1805,7 +1874,7 @@ function viewToday() {
     ${pumpLine(ds, now)}
     ${tonight}
     ${scheduleCard(ds, now, ph)}
-    <div class="card advice"><div class="row"><span class="tag ${tip[0]}">${tip[0] === "book" ? "From the book" : "Cradle tip"}</span><span class="tag claude" style="background:none;padding:0">Phase ${ph} · ${esc(phase.name)}</span></div><p>${esc(tip[1])}</p></div>
+    <div class="card advice"><span class="lbl">${tip[0] === "book" ? "From the book" : "Cradle tip"} · Phase ${ph}, ${esc(phase.name.toLowerCase())}</span><p>${esc(tip[1])}</p></div>
     ${!flags.filter(f => !f.soft).length && evs().length > 8 ? `<div class="okline">${icon("check", "s")}<span>Nothing to flag. Diapers and feeds look on track.</span></div>` : ""}
     ${todayTimeline(ds, now)}
   </div>`;
@@ -1816,8 +1885,8 @@ function pumpLine(ds, now) {
   if (!all.length && prof().feeding === "bottle") return "";
   const today = all.filter(e => e.start_at >= ds && e.end_at != null), last = all.filter(e => e.end_at != null).pop(), rp = runningPump();
   const ml = today.reduce((a, e) => a + ((e.pump && e.pump.ml) || 0), 0);
-  const what = today.length ? `<b class="num">${esc(fmtVol(ml))}</b> pumped today · ${today.length} session${today.length === 1 ? "" : "s"}` : last ? "No pumping yet today" : "Pumping";
-  const sub = rp ? `Pumping now` : last ? `Last ${fmtTime(last.end_at)}${last.start_at < ds ? ` ${new Date(last.start_at).toLocaleDateString([], { weekday: "short" })}` : ""}${last.pump && last.pump.ml ? ` · ${esc(fmtVol(last.pump.ml))}` : ""}` : "Log a session with the timer or after the fact";
+  const what = today.length ? `<b class="num">${esc(fmtVol(ml))}</b> pumped today` : last ? "No pumping yet today" : "Pumping";
+  const sub = rp ? `Pumping now` : last ? `${today.length ? `${today.length} session${today.length === 1 ? "" : "s"} · ` : ""}last ${fmtTime(last.end_at)}${last.start_at < ds ? ` ${new Date(last.start_at).toLocaleDateString([], { weekday: "short" })}` : ""}${!today.length && last.pump && last.pump.ml ? ` · ${esc(fmtVol(last.pump.ml))}` : ""}` : "Log a session with the timer or after the fact";
   return `<div class="card row pumpcard"><span class="badge b-pump">${icon("pump")}</span><button type="button" class="grow" data-act="pumplog" style="text-align:left"><span>${what}</span><br><span class="sub small">${sub}</span></button><button type="button" class="btn ghost" data-act="pump">${rp ? "Finish" : "Log pump"}</button></div>`;
 }
 function overlapSleep(a, b, now) { return sleeps().reduce((s, e) => s + overlap(e.start_at, e.end_at ?? now, a, b), 0); }

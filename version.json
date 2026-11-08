@@ -1,6 +1,6 @@
 {
-  "version": "1.5.3",
-  "notes": "When you log by voice, the message at the top shows what Cradle heard and what it logged, so a misheard entry is easy to undo.",
+  "version": "1.6.0",
+  "notes": "A calmer, smaller Cradle: fewer text sizes, colour only where you tap, and a shorter bottom bar, so more of the day fits on screen. Same layout and buttons.",
   "capabilities": {
     "db": {
       "rules": [
