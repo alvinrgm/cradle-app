@@ -1,6 +1,6 @@
 {
-  "version": "1.5.0",
-  "notes": "Pumping shows on Today with a Log pump button and a Pumps filter in the Log. Typed times like \"318 pump 120ml\" land at 3:18. One tap on the mic starts listening. Import your Huckleberry history from a CSV under Me.",
+  "version": "1.5.1",
+  "notes": "Huckleberry import now reads Huckleberry's real export layout and brings weights over. The mic gives up after 5 seconds if your phone won't listen, and tells you to use the keyboard mic.",
   "capabilities": {
     "db": {
       "rules": [

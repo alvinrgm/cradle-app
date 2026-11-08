@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.5.0">
+<meta name="cradle-version" content="1.5.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -1741,7 +1741,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. It opens as soon as there's signal, with everything already logged.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
@@ -2027,7 +2027,7 @@ const durMs = v => { // "00:15", "0:15:30", "15m", "1h 5m", "15"
 };
 function importRows(rows) {
   const head = rows[0].map(h => h.trim().toLowerCase()), col = (...names) => { for (const n of names) { const i = head.indexOf(n); if (i >= 0) return i; } return -1; };
-  const out = [], skipped = {};
+  const out = [], skipped = {}, weights = [];
   const skip = why => { skipped[why] = (skipped[why] || 0) + 1; };
   const cradle = head.includes("left_min") && head.includes("type");
   const iType = col("type"), iStart = col("start", "start time", "time"), iEnd = col("end", "end time"), iDur = col("duration"), iNote = col("notes", "note");
@@ -2042,7 +2042,7 @@ function importRows(rows) {
     if (end == null && dur) end = start + dur;
     if (end != null && end < start) end = null;
     const text = r.map(x => String(x || "")).join(" | ");
-    const note = g(iNote) || null, base = { start_at: start, end_at: null, note: cradle ? note : null, source: "import", raw_text: text.slice(0, 300) };
+    const note = g(iNote) || null, base = { start_at: start, end_at: null, note: cradle ? note : null, source: "import", raw_text: null };
     if (cradle) {
       const ml = +g(col("ml")) || null, lmin = +g(col("left_min")) || 0, rmin = +g(col("right_min")) || 0;
       if (type === "feed") out.push(Object.assign(base, lmin || rmin ? { type, end_at: end ?? start + (lmin + rmin) * MIN, feed: { kind: "breast", l_sec: lmin * 60, r_sec: rmin * 60, side: lmin && rmin ? "both" : rmin ? "R" : "L" } } : { type, feed: { kind: "bottle", ml, milk: null } }));
@@ -2084,9 +2084,14 @@ function importRows(rows) {
       if (!pee && !poop && /\bdry\b/.test(low)) { skip("dry diaper checks"); continue; }
       out.push(Object.assign(base, { type: "diaper", note, diaper: { pee: pee || !poop, poop } })); continue;
     }
+    if (/growth|weight/.test(type)) { // Huckleberry: weight in Start Condition ("4.48kg", "11.8lb"); length and head size aren't kept by Cradle
+      const w = low.match(/(\d+(?:\.\d+)?)\s*(kg|lbs?|g)\b/);
+      if (w) { weights.push({ kind: "weight", at: start, grams: Math.round(+w[1] * (w[2] === "kg" ? 1000 : w[2] === "g" ? 1 : LB)), note: "From Huckleberry", by: null }); continue; }
+      skip("growth rows without a weight"); continue;
+    }
     skip(`"${g(iType)}" rows`);
   }
-  return { entries: out, skipped, format: cradle ? "Cradle" : "Huckleberry" };
+  return { entries: out, weights, skipped, format: cradle ? "Cradle" : "Huckleberry" };
 }
 function importDupes(entries) {
   const have = evs(); let n = 0;
@@ -2107,27 +2112,30 @@ function openImport() {
       try { res = importRows(parseCsvText(await file.text())); } catch (e) { res = { error: "Couldn't read that file. Is it a CSV?" }; }
       if (res.error) { out.innerHTML = `<p class="sub" role="alert">${esc(res.error)}</p>`; return; }
       const { fresh, dupes } = importDupes(res.entries);
+      const haveW = [...D().checks.values()].filter(c => c.kind === "weight");
+      const newW = (res.weights || []).filter(w => !haveW.some(c => Math.abs(c.at - w.at) < 2 * MIN));
       const by = {}; fresh.forEach(e => { const k = e.type === "feed" ? (e.feed.kind === "breast" ? "breastfeed" : "bottle feed") : e.type === "pump" ? "pump session" : e.type === "spit" ? "spit-up" : e.type; by[k] = (by[k] || 0) + 1; });
       const first = fresh.length ? Math.min(...fresh.map(e => e.start_at)) : null, last = fresh.length ? Math.max(...fresh.map(e => e.start_at)) : null;
       const sk = Object.entries(res.skipped);
-      out.innerHTML = `<div class="card stack" style="margin-top:12px"><h3 class="h3">${fresh.length ? `${fresh.length} entries to add` : "Nothing new to add"}</h3>
+      out.innerHTML = `<div class="card stack" style="margin-top:12px"><h3 class="h3">${fresh.length ? `${fresh.length} entries to add` : newW.length ? "Only weights to add" : "Nothing new to add"}</h3>
         ${fresh.length ? `<p class="small">${Object.entries(by).map(([k, v]) => `${v} ${esc(k)}${v === 1 ? "" : "s"}`).join(" · ")}</p><p class="sub small">${esc(fmtDate(first))} to ${esc(fmtDate(last))} · read as a ${esc(res.format)} export</p>` : ""}
         ${dupes ? `<p class="sub small">${dupes} already in your log, skipped.</p>` : ""}
         ${sk.length ? `<p class="sub small">Not brought over: ${sk.map(([k, v]) => `${v} ${esc(k)}`).join(", ")}.</p>` : ""}
-        ${fresh.length ? `<button type="button" class="btn big block" id="impGo">${icon("check", "s")}Add ${fresh.length} entries</button>` : ""}</div>`;
+        ${newW.length ? `<p class="sub small">Plus ${newW.length} weight${newW.length === 1 ? "" : "s"} for Weights and doctor visits.</p>` : ""}
+        ${fresh.length || newW.length ? `<button type="button" class="btn big block" id="impGo">${icon("check", "s")}Add ${fresh.length} entries${newW.length ? ` and ${newW.length} weight${newW.length === 1 ? "" : "s"}` : ""}</button>` : ""}</div>`;
       const go = $("#impGo", root); if (!go) return;
       go.onclick = async () => {
         go.disabled = true; go.textContent = "Adding…";
         const ids = [], who = (S.me && S.me.id) || null, now = Date.now();
         const docs = fresh.map(x => { const id = newId() + ids.length.toString(36); ids.push(id); return [id, Object.assign({ type: x.type, end_at: null, raw_text: null, logged_by: who, created_at: now, updated_at: now, deleted: false }, x)]; });
-        let failed = 0;
+        let failed = 0; const wids = newW.map((w, i) => { const id = newId() + "w" + i; write("checks/" + id, Object.assign({}, w, { by: who })); return id; });
         for (let i = 0; i < docs.length; i += 40) {
           const r = await Promise.all(docs.slice(i, i + 40).map(([id, d]) => write("events/" + id, d)));
           failed += r.filter(x => x === false).length;
           go.textContent = `Adding… ${Math.min(i + 40, docs.length)} of ${docs.length}`;
         }
         closeSheet();
-        toast(`Added ${docs.length - failed} entries from ${res.format}${failed ? `. ${failed} couldn't be saved` : ""}`, [{ label: "Undo", icon: "undo", fn: async () => { for (let i = 0; i < ids.length; i += 40) await Promise.all(ids.slice(i, i + 40).map(id => write("events/" + id, null))); toast("Import removed"); } }], { ms: 12000 });
+        toast(`Added ${docs.length - failed} entries${wids.length ? ` and ${wids.length} weights` : ""} from ${res.format}${failed ? `. ${failed} couldn't be saved` : ""}`, [{ label: "Undo", icon: "undo", fn: async () => { wids.forEach(id => write("checks/" + id, null)); for (let i = 0; i < ids.length; i += 40) await Promise.all(ids.slice(i, i + 40).map(id => write("events/" + id, null))); toast("Import removed"); } }], { ms: 12000 });
       };
     };
   });
