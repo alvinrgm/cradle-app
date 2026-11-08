@@ -1,9 +1,11 @@
 # Changelog
 
+## 1.5.2
+- The mic: if the phone accepts "listen" but never starts (some Home Screen apps), Cradle stops after 5 seconds, says to use the keyboard's mic, and uses that from then on. (Listed under 1.5.1 by mistake; it ships here.)
+
 ## 1.5.1
 - Huckleberry import checked against Huckleberry's real export layout: breastfeeds (right in one column, left in the other), bottles with milk type, diapers with sizes and colour, pumps with two amounts, and overnight sleeps. Weights come over into Weights and doctor visits. Meds, tummy time, solids and baths are counted and named, not brought over.
 - A 90-day Huckleberry file (2,324 entries) imports in about 10 seconds and is on the server when it finishes.
-- The mic: if the phone accepts "listen" but never starts (some Home Screen apps), Cradle stops after 5 seconds, says to use the keyboard's mic, and uses that from then on.
 
 ## 1.5.0
 - Pumping is on Today: a card with how much you pumped today, how many sessions and when the last one was, plus a Log pump button (or Finish while the timer runs). Tap the card to see every pump in the Log, which has a new Pumps filter. Before this, pumps were saved but only showed deep in the Log, so they looked like they hadn't logged.

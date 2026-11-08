@@ -1,6 +1,6 @@
 {
-  "version": "1.5.1",
-  "notes": "Huckleberry import now reads Huckleberry's real export layout and brings weights over. The mic gives up after 5 seconds if your phone won't listen, and tells you to use the keyboard mic.",
+  "version": "1.5.2",
+  "notes": "The mic stops after 5 seconds if your phone won't start listening, and tells you to use the keyboard's mic.",
   "capabilities": {
     "db": {
       "rules": [

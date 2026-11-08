@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.5.1">
+<meta name="cradle-version" content="1.5.2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -1698,7 +1698,11 @@ function renderDock(show) {
           else if (ev.error !== "aborted") keyboardMic();
           else stopListening();
         };
-        rec.onend = () => { rec = null; if (failed) return; stopListening(); if (heard) submitText(heard); };
+        let started = false; rec.onaudiostart = rec.onstart = () => { started = true; };
+        // A Home Screen app on some iOS versions accepts start() and then never listens. Don't leave the parent
+        // stuck on "Listening": give up after 5 s, use the keyboard mic from now on, and say how.
+        const guard = setTimeout(() => { if (started || !rec) return; failed = true; ls.set("cradle.srOff", "1"); try { rec.abort(); } catch {} rec = null; stopListening(); toast("Listening didn't start here. Tap the box and use the 🎤 on your keyboard.", [], { ms: 9000 }); }, 5000);
+        rec.onend = () => { clearTimeout(guard); rec = null; if (failed) return; stopListening(); if (heard) submitText(heard); };
         dock.classList.add("listening"); i.placeholder = 'Listening… say it, like "pumped 4 ounces"';
         rec.start();
       } catch { rec = null; keyboardMic(); }
@@ -1741,7 +1745,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. It opens as soon as there's signal, with everything already logged.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.5.1";
+const APP_VERSION = "1.5.2";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
