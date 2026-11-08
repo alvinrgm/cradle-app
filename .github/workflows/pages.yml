@@ -1,19 +1,47 @@
-# Publishes the hosted web app (web/dist, built from cradle.html) to GitHub Pages on every push to main.
+# Tests every pull request and every push to main at phone size; on main, deploys the web app (web/dist, built from
+# cradle.html) to GitHub Pages only after the tests pass, then checks the live site. Modelled on Gainsboard's pipeline.
+#
+#   test   -> build check + the phone-size test files in tests/ (390x844, Chromium), the same files as claude-brain
+#             apps/cradle/qa. A red test stops the deploy: the live site keeps the last good version.
+#   deploy -> main only, after test.
+#   smoke  -> main only: opens the live site at 390x844 until it serves the new version.json, checks the app starts with
+#             no uncaught errors and no missing files. A failure fails the run (GitHub emails the repo owner); roll back
+#             by pushing the previous cradle.html + version.json, or Run workflow on an older commit.
+#   nightly-> the full suite runs on main every day at 10:00 UTC (3 am Pacific). It never deploys.
 name: Deploy web app
 on:
   push:
     branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 10 * * *"
   workflow_dispatch:
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: ${{ github.ref == 'refs/heads/main' && 'pages' || format('test-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check web/cradle-shim.js && node --check web/feedback-pins.js
+      - run: node web/build.mjs
+      - run: npm i --no-save --no-package-lock playwright@1.58.0 && npx playwright install --with-deps chromium
+      - run: node tests/run.mjs
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'schedule' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -22,7 +50,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node --check web/cradle-shim.js && node --check web/feedback-pins.js
       - run: node web/build.mjs
       - uses: actions/configure-pages@v5
         with:
@@ -32,3 +59,14 @@ jobs:
           path: web/dist
       - id: deployment
         uses: actions/deploy-pages@v4
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i --no-save --no-package-lock playwright@1.58.0 && npx playwright install --with-deps chromium
+      - run: node tests/smoke.mjs
