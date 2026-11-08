@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+- Pumping is on Today: a card with how much you pumped today, how many sessions and when the last one was, plus a Log pump button (or Finish while the timer runs). Tap the card to see every pump in the Log, which has a new Pumps filter. Before this, pumps were saved but only showed deep in the Log, so they looked like they hadn't logged.
+- Typed pumps keep their time: "318 pump 25 minutes 120 mL" starts at 3:18, and "pump 120ml 315" works too. "pump 120" is still an amount.
+- One tap on the mic starts listening, where the browser allows it (Safari on iPhone usually does). What you say shows in the box and is logged when you stop. Tap the mic again to finish early. If speech isn't allowed, Cradle falls back to the keyboard's mic like before.
+- Import from Huckleberry: Me, then Import from Huckleberry. Pick the CSV from Huckleberry's "Export tracking data as CSV". You see what's in it before anything is added, entries already in the log are skipped, and Undo removes the whole import. A Cradle CSV export works too.
+
 ## 1.4.1
 - Opening Cradle in a new browser or from a new Home Screen icon no longer asks "Who's this?" when you joined by invite.
 - Each person who joins gets a colour nobody in the family has yet.
