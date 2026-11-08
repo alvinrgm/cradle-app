@@ -63,6 +63,8 @@ const pumps = p => p.evaluate(() => evs().filter(e => e.type === 'pump').map(e =
   await p.tap('.typebox .micbtn'); await sleep(500);
   const sp = await p.evaluate(() => ({ starts: window.__srStarts, n: evs().filter(e => e.type === 'pump').length, focused: document.activeElement.id }));
   ok(sp.starts === 1 && sp.n === 4, 'one mic tap listens and logs what was said', sp);
+  const heardToast = await p.evaluate(() => document.querySelector('#toast').innerText);
+  ok(/Heard "pumped 4 ounces" → Pumped 118 ml/.test(heardToast), 'toast shows what was heard and what was logged', heardToast);
   // refused permission falls back to the keyboard mic and remembers
   p = await open(b);
   await p.context().addInitScript("window.SpeechRecognition = window.webkitSpeechRecognition = class { start() { setTimeout(() => { this.onerror({ error: 'not-allowed' }); this.onend(); }, 50); } stop() {} };");

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.3
+- Logging by voice: the message at the top shows what Cradle heard and what it logged, for example: Heard "pumped 4 ounces" → Pumped 118 ml. Undo is right there if it misheard.
+
 ## 1.5.2
 - The mic: if the phone accepts "listen" but never starts (some Home Screen apps), Cradle stops after 5 seconds, says to use the keyboard's mic, and uses that from then on. (Listed under 1.5.1 by mistake; it ships here.)
 

@@ -1,6 +1,6 @@
 {
-  "version": "1.5.2",
-  "notes": "The mic stops after 5 seconds if your phone won't start listening, and tells you to use the keyboard's mic.",
+  "version": "1.5.3",
+  "notes": "When you log by voice, the message at the top shows what Cradle heard and what it logged, so a misheard entry is easy to undo.",
   "capabilities": {
     "db": {
       "rules": [

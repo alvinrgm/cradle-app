@@ -7,7 +7,7 @@ const dir = new URL("./", import.meta.url).pathname;
 copyFileSync(dir + "../cradle.html", dir + "page.html");
 let bad = 0;
 for (const f of readdirSync(dir).filter(f => /^t\d+\.js$/.test(f)).sort()) {
-  const r = spawnSync(process.execPath, [dir + f], { encoding: "utf8", timeout: 300000 });
+  const r = spawnSync(process.execPath, [dir + f], { encoding: "utf8", timeout: 300000, env: { ...process.env, TZ: "America/Los_Angeles" } }) // the tests build expected times in Pacific, like the pages;
   const out = (r.stdout || "") + (r.stderr || "");
   const sum = (out.match(/passes \d+ fails \d+/g) || []).pop() || "no summary";
   const failed = r.status !== 0 || !/fails 0\b/.test(sum) || /ERRORS: (?!none)/.test(out) || /errs \[(?!\])/.test(out);

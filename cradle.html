@@ -1,7 +1,7 @@
 <title>Cradle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#FBF6EF">
-<meta name="cradle-version" content="1.5.2">
+<meta name="cradle-version" content="1.5.3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
@@ -1515,7 +1515,7 @@ function openAddPast() {
 }
 
 /* ---------- type or say ---------- */
-async function submitText(text) {
+async function submitText(text, o = {}) {
   text = (text || "").trim(); if (!text) return;
   const input = $("#say"); const send = $("#sayBtn");
   const parsed = parseShorthand(text);
@@ -1529,7 +1529,7 @@ async function submitText(text) {
     } catch (e) { if (e && e.code === "rate_limited") toast("Claude is busy. Try again in a minute."); }
     finally { send.removeAttribute("aria-busy"); }
   }
-  if (!entries.length) { toast(`Couldn't read "${unclear.join(", ")}". Try "fed 120ml 8:15", "pee", "down 1:30" or "up 2:45".`, [], { ms: 9000 }); return; }
+  if (!entries.length) { toast(`${o.heard ? `Heard "${text}" but c` : "C"}ouldn't read ${o.heard ? "it" : `"${unclear.join(", ")}"`}. Try "fed 120ml 8:15", "pee", "down 1:30" or "up 2:45".`, [], { ms: 9000 }); return; }
   input.value = ""; ls.del("cradle.draft");
   const created = [], before = [];
   for (const x of entries) {
@@ -1546,7 +1546,7 @@ async function submitText(text) {
   }
   buzz();
   const labels = entries.map(x => x.type === "wake" ? `Up ${fmtTime(x.end_at)}` : x.type === "pumpdone" ? `Pump done${x.pump.ml != null ? " " + fmtVol(x.pump.ml) : ""}` : x.type === "pump" && x.end_at == null ? "Pump timer started" : `${evLabel(x)} ${fmtTime(x.start_at)}`);
-  toast(`Logged: ${labels.join(" · ")}${unclear.length ? `. Skipped "${unclear.join(", ")}"` : ""}`, [
+  toast(`${o.heard ? `Heard "${text}" → ` : "Logged: "}${labels.join(" · ")}${unclear.length ? `. Skipped "${unclear.join(", ")}"` : ""}`, [
     created.length === 1 ? { label: "Edit", icon: "edit", fn: () => openEdit(created[0]) } : null,
     { label: "Undo", icon: "undo", fn: () => { created.forEach(id => write("events/" + id, null)); before.forEach(([id, e]) => write("events/" + id, restamp(e))); toast("Removed"); } },
   ].filter(Boolean), { ms: 8000 });
@@ -1702,7 +1702,7 @@ function renderDock(show) {
         // A Home Screen app on some iOS versions accepts start() and then never listens. Don't leave the parent
         // stuck on "Listening": give up after 5 s, use the keyboard mic from now on, and say how.
         const guard = setTimeout(() => { if (started || !rec) return; failed = true; ls.set("cradle.srOff", "1"); try { rec.abort(); } catch {} rec = null; stopListening(); toast("Listening didn't start here. Tap the box and use the 🎤 on your keyboard.", [], { ms: 9000 }); }, 5000);
-        rec.onend = () => { clearTimeout(guard); rec = null; if (failed) return; stopListening(); if (heard) submitText(heard); };
+        rec.onend = () => { clearTimeout(guard); rec = null; if (failed) return; stopListening(); if (heard) submitText(heard, { heard: true }); };
         dock.classList.add("listening"); i.placeholder = 'Listening… say it, like "pumped 4 ounces"';
         rec.start();
       } catch { rec = null; keyboardMic(); }
@@ -1745,7 +1745,7 @@ function viewLoading() {
   ${S.slow ? `<div class="banner warn">${icon("alert", "s")}<span>Can't reach the shared log yet. It opens as soon as there's signal, with everything already logged.</span></div>` : ""}
   <div class="stack"><div class="skel" style="height:150px"></div><div class="stats"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div><div class="skel" style="height:110px"></div></div>`;
 }
-const APP_VERSION = "1.5.2";
+const APP_VERSION = "1.5.3";
 const UPDATE_URL = "https://raw.githubusercontent.com/alvinrgm/cradle-app/main/version.json";
 const UPDATE_PROMPT = "Update my Cradle app: fetch https://raw.githubusercontent.com/alvinrgm/cradle-app/main/INSTALL.md and follow it.";
 let latest = null;
